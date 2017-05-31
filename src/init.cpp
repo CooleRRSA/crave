@@ -13,6 +13,7 @@
 #include "ui_interface.h"
 #include "checkpoints.h"
 #include "activemasternode.h"
+#include "masternodeconfig.h"
 #include "spork.h"
 #include "smessage.h"
 
@@ -394,6 +395,8 @@ bool AppInit2(boost::thread_group& threadGroup)
             LogPrintf("AppInit2 : parameter interaction: -bind set -> setting -listen=1\n");
     }
 
+    // Process masternode config
+    masternodeConfig.read(GetMasternodeConfigFile());
     if (mapArgs.count("-connect") && mapMultiArgs["-connect"].size() > 0) {
         // when only connecting to trusted nodes, do not seed via DNS, or listen by default
         if (SoftSetBoolArg("-dnsseed", false))

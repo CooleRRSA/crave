@@ -94,6 +94,7 @@ inline int64_t FutureDriftV2(int64_t nTime) { return nTime + 120; }
 inline int64_t FutureDrift(int64_t nTime, int nHeight) { return IsProtocolV2(nHeight) ? FutureDriftV2(nTime) : FutureDriftV1(nTime); }
 
 inline unsigned int GetTargetSpacing(int nHeight) { return IsProtocolV2(nHeight) ? 64 : 60; }
+inline int64_t GetMNCollateral(int nHeight) { return 500; }
 
 static const int64_t STAKE_TIMESPAN_SWITCH_TIME = 1428537599;
 

@@ -397,6 +397,7 @@ bool AppInit2(boost::thread_group& threadGroup)
 
     // Process masternode config
     masternodeConfig.read(GetMasternodeConfigFile());
+ 
     if (mapArgs.count("-connect") && mapMultiArgs["-connect"].size() > 0) {
         // when only connecting to trusted nodes, do not seed via DNS, or listen by default
         if (SoftSetBoolArg("-dnsseed", false))

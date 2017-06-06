@@ -34,7 +34,7 @@ public:
         MinimizeCoinAge,   // bool
         UseBlackTheme,     // bool
         DarksendRounds,    // int
-        anonymizeCraveAmount, //int
+        AnonymizeCraveAmount, //int
         OptionIDRowCount,
     };
 
@@ -66,7 +66,7 @@ signals:
     void reserveBalanceChanged(qint64);
     void coinControlFeaturesChanged(bool);
     void darksendRoundsChanged(int);
-    void anonymizeCraveAmountChanged(int);
+    void AnonymizeCraveAmountChanged(int);
 };
 
 #endif // OPTIONSMODEL_H

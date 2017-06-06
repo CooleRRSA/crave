@@ -120,6 +120,10 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return settings.value("language", "");
         case CoinControlFeatures:
             return QVariant(fCoinControlFeatures);
+        case DarksendRounds:
+            return QVariant(nDarksendRounds);
+        case AnonymizeCraveAmount:
+            return QVariant(nAnonymizeCraveAmount);
         case MinimizeCoinAge:
             return settings.value("fMinimizeCoinAge", GetBoolArg("-minimizecoinage", false));
         case UseBlackTheme:
@@ -216,10 +220,10 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
             settings.setValue("nDarksendRounds", nDarksendRounds);
             emit darksendRoundsChanged(nDarksendRounds);
             break;
-        case anonymizeCraveAmount:
+        case AnonymizeCraveAmount:
             nAnonymizeCraveAmount = value.toInt();
             settings.setValue("nAnonymizeCraveAmount", nAnonymizeCraveAmount);
-            emit anonymizeCraveAmountChanged(nAnonymizeCraveAmount);
+            emit AnonymizeCraveAmountChanged(nAnonymizeCraveAmount);
             break;
         default:
             break;

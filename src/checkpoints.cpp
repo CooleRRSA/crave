@@ -27,7 +27,7 @@ namespace Checkpoints
     //
     static MapCheckpoints mapCheckpoints =
         boost::assign::map_list_of
-        (    0,	uint256("0x00000a336bf3e2be21c2ce9a3f9bc9849c697475d0de85e201bdc3452f3c343b") )
+    (    0,	uint256("0x00000a336bf3e2be21c2ce9a3f9bc9849c697475d0de85e201bdc3452f3c343b") )
 	(10000, uint256("0x1cbd7af1430109200bda6ca6a0b94b5771c28819518a201ef96eb0859afca006") )
 	(20000, uint256("0x8ca1f8beca3f6fd966cc83495f367be55ef3460e63abdf692e22e279a47fbe71") )
 	(32712, uint256("0x15682588a31e9064596fc45aa2403558dc62eed296e709e4f577beca1669e788") )
@@ -37,7 +37,7 @@ namespace Checkpoints
 	(32800, uint256("0x274996cec47b3f3e6cd48c8f0b39c32310dd7ddc8328ae37762be956b9031024") )
 	(32900, uint256("0xfcea99cbf85e66d340b9883fd4a22f3426dc5a27e35b9cbf936d9fae3378002c") )
 	(33000,	uint256("0x081cb47222d3e076d4035041547f3d91f8b35526b8087a4e360f1470a8d541da") )
-        (40000, uint256("0x49adb986a856eca96e5af98026f39b30d98d80cacba37ee0bae0ddbf2dbefed9") )
+    (40000, uint256("0x49adb986a856eca96e5af98026f39b30d98d80cacba37ee0bae0ddbf2dbefed9") )
 	(50000, uint256("0xaf0b1d395f56afd34d28af1f606378caa5570f942a5746b8de39470e92a2aa52") )
 	(60000, uint256("0xc847e756dbd4d7119106faa675ab3d900c75c1070c69bb91826ed90e89f75052") )
 	(70000, uint256("0xf7ccc8cb7e5b4075e67c1bc0f8b74d165e0642847f9d3492822dbeda3657f8a2") )
@@ -202,54 +202,23 @@ namespace Checkpoints
     }
 
     // Automatically select a suitable sync-checkpoint 
-    uint256 AutoSelectSyncCheckpoint()
+    const CBlockIndex* AutoSelectSyncCheckpoint()
     {
         const CBlockIndex *pindex = pindexBest;
         // Search backward for a block within max span and maturity window
         while (pindex->pprev && pindex->nHeight + nCheckpointSpan > pindexBest->nHeight)
             pindex = pindex->pprev;
-        return pindex->GetBlockHash();
+        return pindex;
     }
 
     // Check against synchronized checkpoint
-    bool CheckSync(const uint256& hashBlock, const CBlockIndex* pindexPrev)
+    bool CheckSync(int nHeight)
     {
-        if (TestNet()) return true; // Testnet has no checkpoints
-        int nHeight = pindexPrev->nHeight + 1;
-
-        LOCK(cs_hashSyncCheckpoint);
-        // sync-checkpoint should always be accepted block
-        assert(mapBlockIndex.count(hashSyncCheckpoint));
-        const CBlockIndex* pindexSync = mapBlockIndex[hashSyncCheckpoint];
-
-        if (nHeight > pindexSync->nHeight)
-        {
-            // trace back to same height as sync-checkpoint
-            const CBlockIndex* pindex = pindexPrev;
-            while (pindex->nHeight > pindexSync->nHeight)
-                if (!(pindex = pindex->pprev))
-                    return error("CheckSync: pprev null - block index structure failure");
-            if (pindex->nHeight < pindexSync->nHeight || pindex->GetBlockHash() != hashSyncCheckpoint)
-                return false; // only descendant of sync-checkpoint can pass check
-        }
-        if (nHeight == pindexSync->nHeight && hashBlock != hashSyncCheckpoint)
-            return false; // same height with sync-checkpoint
-        if (nHeight < pindexSync->nHeight && !mapBlockIndex.count(hashBlock))
-            return false; // lower height than sync-checkpoint
-        return true;
-    }
-
-    bool WantedByPendingSyncCheckpoint(uint256 hashBlock)
-    {
-        LOCK(cs_hashSyncCheckpoint);
-        if (hashPendingCheckpoint == 0)
+        const CBlockIndex* pindexSync = AutoSelectSyncCheckpoint();
+        if (nHeight <= pindexSync->nHeight){
             return false;
-        if (hashBlock == hashPendingCheckpoint)
-            return true;
-        if (mapOrphanBlocks.count(hashPendingCheckpoint) 
-            && hashBlock == WantedByOrphan(mapOrphanBlocks[hashPendingCheckpoint]))
-            return true;
-        return false;
+        }
+        return true;
     }
 
     // ppcoin: reset synchronized checkpoint to last hardened checkpoint
@@ -294,13 +263,6 @@ namespace Checkpoints
             return error("ResetSyncCheckpoint: failed to write sync checkpoint genesis block");
         LogPrintf("ResetSyncCheckpoint: sync-checkpoint reset to genesis block\n");
         return true;
-    }
-
-    void AskForPendingSyncCheckpoint(CNode* pfrom)
-    {
-        LOCK(cs_hashSyncCheckpoint);
-        if (pfrom && hashPendingCheckpoint != 0 && (!mapBlockIndex.count(hashPendingCheckpoint)) && (!mapOrphanBlocks.count(hashPendingCheckpoint)))
-            pfrom->AskFor(CInv(MSG_BLOCK, hashPendingCheckpoint));
     }
 
     bool SetCheckpointPrivKey(std::string strPrivKey)
@@ -391,6 +353,7 @@ bool CSyncCheckpoint::CheckSignature()
 // ppcoin: process synchronized checkpoint
 bool CSyncCheckpoint::ProcessSyncCheckpoint(CNode* pfrom)
 {
+    
     if (!CheckSignature())
         return false;
 
@@ -401,14 +364,6 @@ bool CSyncCheckpoint::ProcessSyncCheckpoint(CNode* pfrom)
         Checkpoints::hashPendingCheckpoint = hashCheckpoint;
         Checkpoints::checkpointMessagePending = *this;
         LogPrintf("ProcessSyncCheckpoint: pending for sync-checkpoint %s\n", hashCheckpoint.ToString());
-        // Ask this guy to fill in what we're missing
-        if (pfrom)
-        {
-            PushGetBlocks(pfrom, pindexBest, hashCheckpoint);
-            // ask directly as well in case rejected earlier by duplicate
-            // proof-of-stake because getblocks may not get it this time
-            pfrom->AskFor(CInv(MSG_BLOCK, mapOrphanBlocks.count(hashCheckpoint)? WantedByOrphan(mapOrphanBlocks[hashCheckpoint]) : hashCheckpoint));
-        }
         return false;
     }
 

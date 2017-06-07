@@ -488,7 +488,44 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
 
         // 70047 and greater
         vRecv >> vin >> addr >> vchSig >> sigTime >> pubkey >> pubkey2 >> count >> current >> lastUpdated >> protocolVersion;
-
+        
+        //Debug
+        //LogPrintf("Capture masternode packet:\n");
+        //LogPrintf("Vin:%s\n", vin.ToString().c_str());
+        //LogPrintf("Addr:%s\n", addr.ToString().c_str());
+        //LogPrintf("sigTime:%lld\n", sigTime);
+        //LogPrintf("LastUpdated:%lld\n", lastUpdated);
+        //LogPrintf("ProtocolVersion:%d\n", protocolVersion);
+        
+        //Bad nodes check
+        if (sigTime < 1426700641) {
+            //LogPrintf("dsee - Bad packet\n");
+            return;
+        }
+        
+        if (sigTime >= lastUpdated) {
+            //LogPrintf("dsee - Bad node entry\n");
+            return;
+        }
+        
+        std::string nStr = addr.ToString().c_str();
+        std::string ip;
+        int port = 0;
+        SplitHostPort(nStr, port, ip);
+        //LogPrintf("Ip:%s Port:%s\n", ip, port);
+        
+        if (port < 1024) {
+            //LogPrintf("dsee - Bad port\n");
+            return;
+        }
+        
+        //LogPrintf("Capture masternode packet:\n");
+        //LogPrintf("Vin:%s\n", vin.ToString().c_str());
+        //LogPrintf("Addr:%s\n", addr.ToString().c_str());
+        //LogPrintf("sigTime:%lld\n", sigTime);
+        //LogPrintf("LastUpdated:%lld\n", lastUpdated);
+        //LogPrintf("ProtocolVersion:%d\n", protocolVersion);
+        
         // make sure signature isn't in the future (past is OK)
         if (sigTime > GetAdjustedTime() + 60 * 60) {
             LogPrintf("dsee - Signature rejected, too far into the future %s\n", vin.ToString().c_str());
@@ -505,6 +542,7 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
 
         if(protocolVersion < MIN_PEER_PROTO_VERSION) {
             LogPrintf("dsee - ignoring outdated masternode %s protocol version %d\n", vin.ToString().c_str(), protocolVersion);
+            LogPrintf("Addr:%s\n", addr.ToString().c_str());
             return;
         }
 
@@ -535,7 +573,8 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
 
         //search existing masternode list, this is where we update existing masternodes with new dsee broadcasts
         CMasternode* pmn = this->Find(vin);
-        if(pmn != NULL)
+//        if(pmn != NULL)
+        if(pmn != NULL && !(fMasterNode && activeMasternode.vin == CTxIn() && pubkey2 == activeMasternode.pubKeyMasternode))
         {
             // count == -1 when it's a new entry
             //   e.g. We don't want the entry relayed/time updated when we're syncing the list

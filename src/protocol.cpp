@@ -15,13 +15,26 @@ static const char* ppszTypeName[] =
 {
     "ERROR",
     "tx",
+    "dstx",
     "block",
+    "filtered block",
+    "tx lock request",
+    "tx lock vote",
+    "spork",
+    "masternode winner",
+    "unknown",
+    "unknown",
+    "unknown",
+    "unknown",
+    "unknown",
+    "unknown"
 };
 
 CMessageHeader::CMessageHeader()
 {
     memcpy(pchMessageStart, Params().MessageStart(), MESSAGE_START_SIZE);
     memset(pchCommand, 0, sizeof(pchCommand));
+    pchCommand[1] = 1;
     nMessageSize = -1;
     nChecksum = 0;
 }

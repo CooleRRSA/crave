@@ -2,6 +2,7 @@
 #include "net.h"
 #include "masternodeconfig.h"
 #include "util.h"
+#include <base58.h>
 
 CMasternodeConfig masternodeConfig;
 
@@ -23,11 +24,14 @@ bool CMasternodeConfig::read(boost::filesystem::path path) {
         }
         std::istringstream iss(line);
         std::string alias, ip, privKey, txHash, outputIndex;
+        iss.str(line);
+        iss.clear();
         if (!(iss >> alias >> ip >> privKey >> txHash >> outputIndex)) {
-            LogPrintf("CMasternodeConfig::read - Could not parse masternode.conf. Line: %s\n", line.c_str());
+            LogPrintf("Could not parse masternode.conf line: %s\n", line.c_str());
             streamConfig.close();
             return false;
         }
+
         add(alias, ip, privKey, txHash, outputIndex);
     }
 

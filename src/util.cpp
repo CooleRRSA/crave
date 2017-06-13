@@ -10,7 +10,8 @@
 #include "ui_interface.h"
 #include "uint256.h"
 #include "version.h"
-#include "masternodeconfig.h"
+#include "netbase.h"
+#include "allocators.h"
 
 #include <algorithm>
 
@@ -73,12 +74,14 @@ bool fMasterNode = false;
 string strMasterNodePrivKey = "";
 string strMasterNodeAddr = "";
 bool fLiteMode = false;
-int nInstantXDepth = 1;
+bool fEnableInstantX = true;
+int nInstantXDepth = 10;
 int nDarksendRounds = 2;
-int nAnonymizeCraveAmount = 500;
+int nAnonymizeCraveAmount = 1000;
 int nLiquidityProvider = 0;
 /** Spork enforcement enabled time */
 int64_t enforceMasternodePaymentsTime = 4085657524;
+int nMasternodeMinProtocol = 0;
 bool fSucessfullyLoaded = false;
 bool fEnableDarksend = false;
 /** All denominations used by darksend */
@@ -110,8 +113,6 @@ void locking_callback(int mode, int i, const char* file, int line)
     }
 }
 
-LockedPageManager LockedPageManager::instance;
-
 // Init
 class CInit
 {
@@ -134,8 +135,6 @@ public:
     }
     ~CInit()
     {
-        // Securely erase the memory used by the PRNG
-        RAND_cleanup();
         // Shutdown OpenSSL library multithreading support
         CRYPTO_set_locking_callback(NULL);
         for (int i = 0; i < CRYPTO_num_locks(); i++)
@@ -145,12 +144,14 @@ public:
 }
 instance_of_cinit;
 
-
-
-
-
-
-
+bool GetRandBytes(unsigned char *buf, int num)
+{
+    if (RAND_bytes(buf, num) == 0) {
+        LogPrint("rand", "%s : OpenSSL RAND_bytes() failed with error: %s\n", __func__, ERR_error_string(ERR_get_error(), NULL));
+        return false;
+    }
+    return true;
+}
 
 void RandAddSeed()
 {
@@ -196,9 +197,9 @@ uint64_t GetRand(uint64_t nMax)
     // to give every possible output value an equal possibility
     uint64_t nRange = (std::numeric_limits<uint64_t>::max() / nMax) * nMax;
     uint64_t nRand = 0;
-    do
-        RAND_bytes((unsigned char*)&nRand, sizeof(nRand));
-    while (nRand >= nRange);
+    do {
+        GetRandBytes((unsigned char*)&nRand, sizeof(nRand));
+    } while (nRand >= nRange);
     return (nRand % nMax);
 }
 
@@ -210,16 +211,8 @@ int GetRandInt(int nMax)
 uint256 GetRandHash()
 {
     uint256 hash;
-    RAND_bytes((unsigned char*)&hash, sizeof(hash));
+    GetRandBytes((unsigned char*)&hash, sizeof(hash));
     return hash;
-}
-
-void GetRandBytes(unsigned char* buf, int num)
-{
-    if (RAND_bytes(buf, num) != 1) {
-        LogPrintf("%s: OpenSSL RAND_bytes() failed with error: %s\n", __func__, ERR_error_string(ERR_get_error(), NULL));
-        assert(false);
-    }
 }
 
 // LogPrintf() has been broken a couple of times now
@@ -420,7 +413,7 @@ string SanitizeString(const string& str)
     return strResult;
 }
 
-static const signed char phexdigit[256] =
+const signed char p_util_hexdigit[256] =
 { -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
   -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -440,9 +433,9 @@ static const signed char phexdigit[256] =
 
 bool IsHex(const string& str)
 {
-    BOOST_FOREACH(unsigned char c, str)
+    BOOST_FOREACH(char c, str)
     {
-        if (phexdigit[c] < 0)
+        if (HexDigit(c) < 0)
             return false;
     }
     return (str.size() > 0) && (str.size()%2 == 0);
@@ -456,11 +449,11 @@ vector<unsigned char> ParseHex(const char* psz)
     {
         while (isspace(*psz))
             psz++;
-        signed char c = phexdigit[(unsigned char)*psz++];
+        signed char c = HexDigit(*psz++);
         if (c == (signed char)-1)
             break;
         unsigned char n = (c << 4);
-        c = phexdigit[(unsigned char)*psz++];
+        c = HexDigit(*psz++);
         if (c == (signed char)-1)
             break;
         n |= c;
@@ -1156,7 +1149,7 @@ boost::filesystem::path GetConfigFile()
 boost::filesystem::path GetMasternodeConfigFile()
 {
     boost::filesystem::path pathConfigFile(GetArg("-mnconf", "masternode.conf"));
-    if (!pathConfigFile.is_complete()) pathConfigFile = GetDataDir(false) / pathConfigFile;
+    if (!pathConfigFile.is_complete()) pathConfigFile = GetDataDir() / pathConfigFile;
     return pathConfigFile;
 }
 
@@ -1164,8 +1157,13 @@ void ReadConfigFile(map<string, string>& mapSettingsRet,
                     map<string, vector<string> >& mapMultiSettingsRet)
 {
     boost::filesystem::ifstream streamConfig(GetConfigFile());
-    if (!streamConfig.good())
-        return; // No bitcoin.conf file is OK
+    if (!streamConfig.good()){
+        // Create empty darksilk.conf if it does not excist
+        FILE* configFile = fopen(GetConfigFile().string().c_str(), "a");
+        if (configFile != NULL)
+            fclose(configFile);
+        return; // Nothing to read, so just return
+    }
 
     set<string> setOptions;
     setOptions.insert("*");
@@ -1218,9 +1216,10 @@ bool RenameOver(boost::filesystem::path src, boost::filesystem::path dest)
 
 void FileCommit(FILE *fileout)
 {
-    fflush(fileout);                // harmless if redundantly called
+    fflush(fileout); // harmless if redundantly called
 #ifdef WIN32
-    _commit(_fileno(fileout));
+    HANDLE hFile = (HANDLE)_get_osfhandle(_fileno(fileout));
+    FlushFileBuffers(hFile);
 #else
     fsync(fileno(fileout));
 #endif
@@ -1297,11 +1296,11 @@ void seed_insecure_rand(bool fDeterministic)
     } else {
         uint32_t tmp;
         do{
-            RAND_bytes((unsigned char*)&tmp,4);
+            GetRandBytes((unsigned char*)&tmp,4);
         }while(tmp==0 || tmp==0x9068ffffU);
         insecure_rand_Rz=tmp;
         do{
-            RAND_bytes((unsigned char*)&tmp,4);
+            GetRandBytes((unsigned char*)&tmp,4);
         }while(tmp==0 || tmp==0x464fffffU);
         insecure_rand_Rw=tmp;
     }
@@ -1389,5 +1388,3 @@ std::string DateTimeStrFormat(const char* pszFormat, int64_t nTime)
     ss << boost::posix_time::from_time_t(nTime);
     return ss.str();
 }
-
-

@@ -22,7 +22,7 @@ BEGIN
             VALUE "FileDescription",    "Crave-Qt (OSS GUI client for Crave)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
             VALUE "InternalName",       "crave-qt"
-            VALUE "LegalCopyright",     "2009-2014 The Bitcoin developers, 2012-2014 The NovaCoin & PPCoin developers, 2014 The Crave developers"
+            VALUE "LegalCopyright",     "2009-2014 The Bitcoin developers, 2012-2014 The NovaCoin & PPCoin developers, 2015-2017 The Crave developers"
             VALUE "LegalTrademarks1",   "Distributed under the MIT/X11 software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
             VALUE "OriginalFilename",   "crave-qt.exe"
             VALUE "ProductName",        "Crave-Qt"

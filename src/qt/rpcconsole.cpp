@@ -7,6 +7,7 @@
 #include "rpcserver.h"
 #include "rpcclient.h"
 
+#include <QClipboard>
 #include <QTime>
 #include <QThread>
 #include <QKeyEvent>
@@ -57,7 +58,7 @@ void RPCExecutor::start()
 }
 
 /**
- * Split shell command line into a list of arguments. Aims to emulate \c bash and friends.
+ * Split crave command line into a list of arguments. Aims to emulate \c bash and friends.
  *
  * - Arguments are delimited with whitespace
  * - Extra whitespace at the beginning and end and between arguments will be ignored
@@ -203,8 +204,6 @@ RPCConsole::RPCConsole(QWidget *parent) :
     // Install event filter for up and down arrow
     ui->lineEdit->installEventFilter(this);
     ui->messagesWidget->installEventFilter(this);
-
-    connect(ui->clearButton, SIGNAL(clicked()), this, SLOT(clear()));
 
     // set OpenSSL version label
     ui->openSSLVersion->setText(SSLeay_version(SSLEAY_VERSION));
@@ -484,6 +483,16 @@ void RPCConsole::setTrafficGraphRange(int mins)
     }
 }
 
+void RPCConsole::on_copyButton_clicked()
+{
+    GUIUtil::setClipboard(ui->lineEdit->text());
+}
+
+void RPCConsole::on_pasteButton_clicked()
+{
+	ui->lineEdit->setText(QApplication::clipboard()->text());
+}
+
 void RPCConsole::updateTrafficStats(quint64 totalBytesIn, quint64 totalBytesOut)
 {
     ui->lblBytesIn->setText(FormatBytes(totalBytesIn));
@@ -493,4 +502,9 @@ void RPCConsole::updateTrafficStats(quint64 totalBytesIn, quint64 totalBytesOut)
 void RPCConsole::on_btnClearTrafficGraph_clicked()
 {
     ui->trafficGraph->clear();
+}
+
+void RPCConsole::showBackups()
+{
+    GUIUtil::showBackups();
 }

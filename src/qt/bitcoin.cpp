@@ -68,7 +68,7 @@ static bool ThreadSafeAskFee(int64_t nFeeRequired, const std::string& strCaption
 {
     if(!guiref)
         return false;
-    if(nFeeRequired < MIN_TX_FEE || nFeeRequired <= nTransactionFee || fDaemon)
+    if(nFeeRequired < MIN_TX_FEE || nFeeRequired <= nTransactionFee)
         return true;
     bool payFee = false;
 
@@ -124,8 +124,7 @@ void DebugMessageHandler(QtMsgType type, const QMessageLogContext& context, cons
 #ifndef BITCOIN_QT_TEST
 int main(int argc, char *argv[])
 {
-    fHaveGUI = true;
-
+	fHaveGUI = true;
     // Command-line options take precedence:
     ParseParameters(argc, argv);
 

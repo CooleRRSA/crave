@@ -34,7 +34,7 @@ SendMessagesDialog::SendMessagesDialog(Mode mode, Type type, QWidget *parent) :
 #if QT_VERSION >= 0x040700
      /* Do not move this to the XML file, Qt before 4.7 will choke on it */
     if(mode == SendMessagesDialog::Encrypted)
-        ui->addressFrom->setPlaceholderText(tr("Enter a CRAVE address (e.g. CGNHEpNCWgQP6TV4rZ2ZyzF8WiXefmhUWK)"));
+        ui->addressFrom->setPlaceholderText(tr("Enter a Crave address (e.g. C8gZqgY4r2RoEdqYk3QsAqFckyf9pRHN6i)"));
  #endif
     addEntry();
 

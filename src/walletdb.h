@@ -7,6 +7,7 @@
 
 #include "db.h"
 #include "key.h"
+#include "keystore.h"
 #include "stealth.h"
 
 #include <list>
@@ -90,30 +91,6 @@ public:
 
 };
 
-class CAdrenalineNodeConfig
-{
-public:
-    int nVersion;
-    std::string sAlias;
-    std::string sAddress;
-    std::string sCollateralAddress;
-    std::string sMasternodePrivKey;
-
-    CAdrenalineNodeConfig()
-    {
-	nVersion = 0;
-    }
-
-    IMPLEMENT_SERIALIZE(
-        READWRITE(nVersion);
-        READWRITE(sAlias);
-        READWRITE(sAddress);
-        READWRITE(sCollateralAddress);
-	READWRITE(sMasternodePrivKey);
-    )
-};
-
-
 /** Access to the wallet database (wallet.dat) */
 class CWalletDB : public CDB
 {
@@ -137,15 +114,14 @@ public:
     bool WriteStealthAddress(const CStealthAddress& sxAddr);    
     bool ReadStealthAddress(CStealthAddress& sxAddr);
 
-    bool WriteAdrenalineNodeConfig(std::string sAlias, const CAdrenalineNodeConfig& nodeConfig);
-    bool ReadAdrenalineNodeConfig(std::string sAlias, CAdrenalineNodeConfig& nodeConfig);
-    bool EraseAdrenalineNodeConfig(std::string sAlias);
-
     bool WriteKey(const CPubKey& vchPubKey, const CPrivKey& vchPrivKey, const CKeyMetadata &keyMeta);
     bool WriteCryptedKey(const CPubKey& vchPubKey, const std::vector<unsigned char>& vchCryptedSecret, const CKeyMetadata &keyMeta);
     bool WriteMasterKey(unsigned int nID, const CMasterKey& kMasterKey);
 
     bool WriteCScript(const uint160& hash, const CScript& redeemScript);
+
+    bool WriteWatchOnly(const CScript &script);
+    bool EraseWatchOnly(const CScript &script);
 
     bool WriteBestBlock(const CBlockLocator& locator);
     bool ReadBestBlock(CBlockLocator& locator);
@@ -165,7 +141,10 @@ public:
 private:
     bool WriteAccountingEntry(const uint64_t nAccEntryNum, const CAccountingEntry& acentry);
 public:
-    bool WriteAccountingEntry(const CAccountingEntry& acentry);
+    /// This writes directly to the database, and will not update the CWallet's cached accounting entries!
+    /// Use wallet.AddAccountingEntry instead, to write *and* update its caches.
+    bool WriteAccountingEntry_Backend(const CAccountingEntry& acentry);
+
     int64_t GetAccountCreditDebit(const std::string& strAccount);
     void ListAccountCreditDebit(const std::string& strAccount, std::list<CAccountingEntry>& acentries);
 

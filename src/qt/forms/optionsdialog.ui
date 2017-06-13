@@ -161,7 +161,7 @@
           <number>2</number>
          </property>
          <property name="maximum">
-          <number>6</number>
+          <number>16</number>
          </property>
          <property name="value">
           <number>3</number>
@@ -196,7 +196,7 @@
           <number>2</number>
          </property>
          <property name="maximum">
-          <number>2000</number>
+          <number>10000</number>
          </property>
          <property name="singleStep">
           <number>10</number>
@@ -417,16 +417,6 @@
          </property>
          <property name="text">
           <string>Display coin &amp;control features (experts only!)</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="minimizeCoinAge">
-         <property name="toolTip">
-          <string>Whether to select the coin outputs randomly or with minimal coin age.</string>
-         </property>
-         <property name="text">
-          <string>Minimize weight consumption (experimental)</string>
          </property>
         </widget>
        </item>

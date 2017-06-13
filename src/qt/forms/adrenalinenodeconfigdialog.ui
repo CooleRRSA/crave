@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Adrenaline Node Configuration Template</string>
+   <string>Master Node Configuration Template</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

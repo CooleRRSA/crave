@@ -33,13 +33,15 @@ class CMasternodeDB
 {
 private:
     boost::filesystem::path pathMN;
+    std::string strMagicMessage;
 public:
     enum ReadResult {
         Ok,
        FileError,
         HashReadError,
         IncorrectHash,
-        IncorrectMagic,
+        IncorrectMagicMessage,
+        IncorrectMagicNumber,
         IncorrectFormat
     };
 
@@ -93,13 +95,16 @@ public:
     // Check all masternodes
     void Check();
 
+    /// Ask (source) node for mnb
+    void AskForMN(CNode *pnode, CTxIn &vin);
+
     // Check all masternodes and remove inactive
     void CheckAndRemove();
 
     // Clear masternode vector
     void Clear();
 
-    int CountEnabled();
+    int CountEnabled(int protocolVersion = -1);
 
     int CountMasternodesAboveProtocol(int protocolVersion);
 
@@ -107,24 +112,29 @@ public:
 
     // Find an entry
     CMasternode* Find(const CTxIn& vin);
+    CMasternode* Find(const CPubKey& pubKeyMasternode);
 
     //Find an entry thta do not match every entry provided vector
-    CMasternode* FindOldestNotInVec(const std::vector<CTxIn> &vVins);
+    CMasternode* FindOldestNotInVec(const std::vector<CTxIn> &vVins, int nMinimumAge);
 
     // Find a random entry
     CMasternode* FindRandom();
+
+    /// Find a random entry
+    CMasternode* FindRandomNotInVec(std::vector<CTxIn> &vecToExclude, int protocolVersion = -1);
 
     // Get the current winner for this block
     CMasternode* GetCurrentMasterNode(int mod=1, int64_t nBlockHeight=0, int minProtocol=0);
 
     std::vector<CMasternode> GetFullMasternodeVector() { Check(); return vMasternodes; }
 
-    int GetMasternodeRank(const CTxIn &vin, int64_t nBlockHeight, int minProtocol=0);
-    CMasternode* GetMasternodeByRank(int nRank, int64_t nBlockHeight, int minProtocol=0);
-
-    void ProcessMessage(CNode* pfrom, std::string& strCommand, CDataStream& vRecv);
+    std::vector<pair<int, CMasternode> > GetMasternodeRanks(int64_t nBlockHeight, int minProtocol=0);
+    int GetMasternodeRank(const CTxIn &vin, int64_t nBlockHeight, int minProtocol=0, bool fOnlyActive=true);
+    CMasternode* GetMasternodeByRank(int nRank, int64_t nBlockHeight, int minProtocol=0, bool fOnlyActive=true);
 
     void ProcessMasternodeConnections();
+
+    void ProcessMessage(CNode* pfrom, std::string& strCommand, CDataStream& vRecv);
 
     // Return the number of (unique) masternodes
     int size() { return vMasternodes.size(); }
@@ -138,6 +148,7 @@ public:
     void RelayMasternodeEntry(const CTxIn vin, const CService addr, const std::vector<unsigned char> vchSig, const int64_t nNow, const CPubKey pubkey, const CPubKey pubkey2, const int count, const int current, const int64_t lastUpdated, const int protocolVersion);
     void RelayMasternodeEntryPing(const CTxIn vin, const std::vector<unsigned char> vchSig, const int64_t nNow, const bool stop);
 
+    void Remove(CTxIn vin);
 
 };
 

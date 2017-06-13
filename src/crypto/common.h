@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef CRAVE_CRYPTO_COMMON_H
-#define CRAVE_CRYPTO_COMMON_H
+#ifndef TX_CRYPTO_COMMON_H
+#define TX_CRYPTO_COMMON_H
 
 #include <stdint.h>
 
@@ -113,4 +113,4 @@ void static inline WriteBE64(unsigned char* ptr, uint64_t x)
 #endif
 }
 
-#endif // CRAVE_CRYPTO_COMMON_H
+#endif // TX_CRYPTO_COMMON_H

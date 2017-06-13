@@ -15,7 +15,7 @@
         <location line="+41"/>
         <source>Copyright © 2009-2014 The Bitcoin developers
 Copyright © 2012-2014 The NovaCoin developers
-Copyright © 2014 The Crave developers</source>
+Copyright © 2015-2017 The Crave developers</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1391,7 +1391,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     <name>PaymentServer</name>
     <message>
         <location filename="../paymentserver.cpp" line="+107"/>
-        <source>Cannot start crave: click-to-pay handler</source>
+        <source>Cannot start transfer: click-to-pay handler</source>
         <translation type="unfinished"/>
     </message>
 </context>
@@ -1713,7 +1713,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
         <location line="+86"/>
         <location line="+86"/>
         <location line="+32"/>
-        <source>0.00 BC</source>
+        <source>0.00 CRAVE</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1783,7 +1783,7 @@ This label turns red, if the priority is smaller than &quot;medium&quot;.
     </message>
     <message>
         <location line="+16"/>
-        <source>123.456 BC</source>
+        <source>123.456 CRAVE</source>
         <translation type="unfinished"/>
     </message>
     <message>

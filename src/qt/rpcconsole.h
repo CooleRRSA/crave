@@ -43,6 +43,10 @@ private slots:
     void updateTrafficStats(quint64 totalBytesIn, quint64 totalBytesOut);
     /** clear traffic graph */
     void on_btnClearTrafficGraph_clicked();
+    /** paste clipboard to line */
+    void on_pasteButton_clicked();
+    /** copy to clipboard */
+    void on_copyButton_clicked();
 
 public slots:
     void clear();
@@ -57,6 +61,8 @@ public slots:
     void browseHistory(int offset);
     /** Scroll console view to end */
     void scrollToEnd();
+    /** Show folder with wallet backups in default browser */
+    void showBackups();
 signals:
     // For RPC command executor
     void stopExecutor();

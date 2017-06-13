@@ -1,4 +1,5 @@
 #include "masternodeman.h"
+#include "masternode.h"
 #include "activemasternode.h"
 #include "darksend.h"
 #include "core.h"
@@ -10,6 +11,7 @@
 
 /** Masternode manager */
 CMasternodeMan mnodeman;
+CCriticalSection cs_process_message;
 
 struct CompareValueOnly
 {
@@ -19,6 +21,15 @@ struct CompareValueOnly
         return t1.first < t2.first;
     }
 };
+struct CompareValueOnlyMN
+{
+    bool operator()(const pair<int64_t, CMasternode>& t1,
+                    const pair<int64_t, CMasternode>& t2) const
+    {
+        return t1.first < t2.first;
+    }
+};
+
 
 //
 // CMasternodeDB
@@ -27,6 +38,7 @@ struct CompareValueOnly
 CMasternodeDB::CMasternodeDB()
 {
     pathMN = GetDataDir() / "mncache.dat";
+    strMagicMessage = "MasternodeCache";
 }
 
 bool CMasternodeDB::Write(const CMasternodeMan& mnodemanToSave)
@@ -35,7 +47,8 @@ bool CMasternodeDB::Write(const CMasternodeMan& mnodemanToSave)
 
     // serialize addresses, checksum data up to that point, then append csum
     CDataStream ssMasternodes(SER_DISK, CLIENT_VERSION);
-    ssMasternodes << FLATDATA(Params().MessageStart());
+    ssMasternodes << strMagicMessage; // masternode cache file specific magic message
+    ssMasternodes << FLATDATA(Params().MessageStart()); // network specific magic number
     ssMasternodes << mnodemanToSave;
     uint256 hash = Hash(ssMasternodes.begin(), ssMasternodes.end());
     ssMasternodes << hash;
@@ -106,7 +119,19 @@ CMasternodeDB::ReadResult CMasternodeDB::Read(CMasternodeMan& mnodemanToLoad)
     }
 
     unsigned char pchMsgTmp[4];
+    std::string strMagicMessageTmp;
     try {
+        // de-serialize file header (masternode cache file specific magic message) and ..
+
+        ssMasternodes >> strMagicMessageTmp;
+
+        // ... verify the message matches predefined one
+        if (strMagicMessage != strMagicMessageTmp)
+        {
+            error("%s : Invalid masternode cache magic message", __func__);
+            return IncorrectMagicMessage;
+        }
+
         // de-serialize file header (network specific magic number) and ..
         ssMasternodes >> FLATDATA(pchMsgTmp);
 
@@ -114,7 +139,7 @@ CMasternodeDB::ReadResult CMasternodeDB::Read(CMasternodeMan& mnodemanToLoad)
         if (memcmp(pchMsgTmp, Params().MessageStart(), sizeof(pchMsgTmp)))
         {
             error("%s : Invalid network magic number", __func__);
-            return IncorrectMagic;
+            return IncorrectMagicNumber;
         }
 
         // de-serialize address data into one CMnList object
@@ -140,15 +165,21 @@ void DumpMasternodes()
     CMasternodeDB mndb;
     CMasternodeMan tempMnodeman;
 
-    LogPrintf("Verifying mnchache.dat format...\n");
+    LogPrintf("Verifying mncache.dat format...\n");
     CMasternodeDB::ReadResult readResult = mndb.Read(tempMnodeman);
     // there was an error and it was not an error on file openning => do not proceed
     if (readResult == CMasternodeDB::FileError)
         LogPrintf("Missing masternode list file - mncache.dat, will try to recreate\n");
     else if (readResult != CMasternodeDB::Ok)
     {
-        LogPrintf("Masternode list file mncache.dat has invalid format\n");
-        return;
+        LogPrintf("Error reading mncache.dat: ");
+        if(readResult == CMasternodeDB::IncorrectFormat)
+            LogPrintf("magic is ok but data has invalid format, will try to recreate\n");
+        else
+        {
+            LogPrintf("file format is unknown or invalid, please fix it manually\n");
+            return;
+        }
     }
     LogPrintf("Writting info to mncache.dat...\n");
     mndb.Write(mnodeman);
@@ -171,12 +202,29 @@ bool CMasternodeMan::Add(CMasternode &mn)
 
     if (pmn == NULL)
     {
-        if(fDebug) LogPrintf("CMasternodeMan: Adding new masternode %s - %i now\n", mn.addr.ToString().c_str(), size() + 1);
+        LogPrint("masternode", "CMasternodeMan: Adding new masternode %s - %i now\n", mn.addr.ToString().c_str(), size() + 1);
         vMasternodes.push_back(mn);
         return true;
     }
 
     return false;
+}
+
+void CMasternodeMan::AskForMN(CNode* pnode, CTxIn &vin)
+{
+    std::map<COutPoint, int64_t>::iterator i = mWeAskedForMasternodeListEntry.find(vin.prevout);
+    if (i != mWeAskedForMasternodeListEntry.end())
+    {
+        int64_t t = (*i).second;
+        if (GetTime() < t) return; // we've asked recently
+    }
+
+    // ask for the mnb info once from the node that sent mnp
+
+    LogPrintf("CMasternodeMan::AskForMN - Asking node for missing entry, vin: %s\n", vin.ToString());
+    pnode->PushMessage("dseg", vin);
+    int64_t askAgain = GetTime() + MASTERNODE_MIN_DSEEP_SECONDS;
+    mWeAskedForMasternodeListEntry[vin.prevout] = askAgain;
 }
 
 void CMasternodeMan::Check()
@@ -196,8 +244,8 @@ void CMasternodeMan::CheckAndRemove()
     //remove inactive
     vector<CMasternode>::iterator it = vMasternodes.begin();
     while(it != vMasternodes.end()){
-        if((*it).activeState == 4 || (*it).activeState == 3){
-            if(fDebug) LogPrintf("CMasternodeMan: Removing inactive masternode %s - %i now\n", (*it).addr.ToString().c_str(), size() - 1);
+        if((*it).activeState == CMasternode::MASTERNODE_REMOVE || (*it).activeState == CMasternode::MASTERNODE_VIN_SPENT || (*it).protocolVersion < nMasternodeMinProtocol){
+            LogPrint("masternode", "CMasternodeMan: Removing inactive masternode %s - %i now\n", (*it).addr.ToString().c_str(), size() - 1);
             it = vMasternodes.erase(it);
         } else {
             ++it;
@@ -246,13 +294,15 @@ void CMasternodeMan::Clear()
     nDsqCount = 0;
 }
 
-int CMasternodeMan::CountEnabled()
+int CMasternodeMan::CountEnabled(int protocolVersion)
 {
     int i = 0;
+    protocolVersion = protocolVersion == -1 ? masternodePayments.GetMinMasternodePaymentsProto() : protocolVersion;
 
     BOOST_FOREACH(CMasternode& mn, vMasternodes) {
         mn.Check();
-        if(mn.IsEnabled()) i++;
+        if(mn.protocolVersion < protocolVersion || !mn.IsEnabled()) continue;
+        i++;
     }
 
     return i;
@@ -294,35 +344,38 @@ CMasternode *CMasternodeMan::Find(const CTxIn &vin)
 
     BOOST_FOREACH(CMasternode& mn, vMasternodes)
     {
-        if(mn.vin == vin)
+        if(mn.vin.prevout == vin.prevout)
             return &mn;
     }
     return NULL;
 }
 
-CMasternode* CMasternodeMan::FindOldestNotInVec(const std::vector<CTxIn> &vVins)
+CMasternode* CMasternodeMan::FindOldestNotInVec(const std::vector<CTxIn> &vVins, int nMinimumAge)
 {
     LOCK(cs);
 
     CMasternode *pOldestMasternode = NULL;
 
     BOOST_FOREACH(CMasternode &mn, vMasternodes)
-    {
+    {   
         mn.Check();
         if(!mn.IsEnabled()) continue;
 
+        if(mn.GetMasternodeInputAge() < nMinimumAge) continue;
+
         bool found = false;
         BOOST_FOREACH(const CTxIn& vin, vVins)
-            if(mn.vin == vin)
-            {
+            if(mn.vin.prevout == vin.prevout)
+            {   
                 found = true;
                 break;
             }
-
         if(found) continue;
 
-        if(pOldestMasternode == NULL || pOldestMasternode->GetMasternodeInputAge() < mn.GetMasternodeInputAge())
+        if(pOldestMasternode == NULL || pOldestMasternode->SecondsSincePayment() < mn.SecondsSincePayment())
+        {
             pOldestMasternode = &mn;
+        }
     }
 
     return pOldestMasternode;
@@ -335,6 +388,50 @@ CMasternode *CMasternodeMan::FindRandom()
     if(size() == 0) return NULL;
 
     return &vMasternodes[GetRandInt(vMasternodes.size())];
+}
+
+CMasternode *CMasternodeMan::Find(const CPubKey &pubKeyMasternode)
+{
+    LOCK(cs);
+
+    BOOST_FOREACH(CMasternode& mn, vMasternodes)
+    {
+        if(mn.pubkey2 == pubKeyMasternode)
+            return &mn;
+    }
+    return NULL;
+}
+
+CMasternode *CMasternodeMan::FindRandomNotInVec(std::vector<CTxIn> &vecToExclude, int protocolVersion)
+{
+    LOCK(cs);
+
+    protocolVersion = protocolVersion == -1 ? masternodePayments.GetMinMasternodePaymentsProto() : protocolVersion;
+
+    int nCountEnabled = CountEnabled(protocolVersion);
+    LogPrintf("CMasternodeMan::FindRandomNotInVec - nCountEnabled - vecToExclude.size() %d\n", nCountEnabled - vecToExclude.size());
+    if(nCountEnabled - vecToExclude.size() < 1) return NULL;
+
+    int rand = GetRandInt(nCountEnabled - vecToExclude.size());
+    LogPrintf("CMasternodeMan::FindRandomNotInVec - rand %d\n", rand);
+    bool found;
+
+    BOOST_FOREACH(CMasternode &mn, vMasternodes) {
+        if(mn.protocolVersion < protocolVersion || !mn.IsEnabled()) continue;
+        found = false;
+        BOOST_FOREACH(CTxIn &usedVin, vecToExclude) {
+            if(mn.vin.prevout == usedVin.prevout) {
+                found = true;
+                break;
+            }
+        }
+        if(found) continue;
+        if(--rand < 1) {
+            return &mn;
+        }
+    }
+
+    return NULL;
 }
 
 CMasternode* CMasternodeMan::GetCurrentMasterNode(int mod, int64_t nBlockHeight, int minProtocol)
@@ -362,18 +459,21 @@ CMasternode* CMasternodeMan::GetCurrentMasterNode(int mod, int64_t nBlockHeight,
     return winner;
 }
 
-int CMasternodeMan::GetMasternodeRank(const CTxIn& vin, int64_t nBlockHeight, int minProtocol)
+int CMasternodeMan::GetMasternodeRank(const CTxIn& vin, int64_t nBlockHeight, int minProtocol, bool fOnlyActive)
 {
     std::vector<pair<unsigned int, CTxIn> > vecMasternodeScores;
+
+    //make sure we know about this block
+    uint256 hash = 0;
+    if(!GetBlockHash(hash, nBlockHeight)) return -1;
 
     // scan for winner
     BOOST_FOREACH(CMasternode& mn, vMasternodes) {
 
-        mn.Check();
-
         if(mn.protocolVersion < minProtocol) continue;
-        if(!mn.IsEnabled()) {
-            continue;
+        if(fOnlyActive) {
+            mn.Check();
+            if(!mn.IsEnabled()) continue;
         }
 
         uint256 n = mn.CalculateScore(1, nBlockHeight);
@@ -396,9 +496,14 @@ int CMasternodeMan::GetMasternodeRank(const CTxIn& vin, int64_t nBlockHeight, in
     return -1;
 }
 
-CMasternode* CMasternodeMan::GetMasternodeByRank(int nRank, int64_t nBlockHeight, int minProtocol)
+std::vector<pair<int, CMasternode> > CMasternodeMan::GetMasternodeRanks(int64_t nBlockHeight, int minProtocol)
 {
-    std::vector<pair<unsigned int, CTxIn> > vecMasternodeScores;
+    std::vector<pair<unsigned int, CMasternode> > vecMasternodeScores;
+    std::vector<pair<int, CMasternode> > vecMasternodeRanks;
+
+    //make sure we know about this block
+    uint256 hash = 0;
+    if(!GetBlockHash(hash, nBlockHeight)) return vecMasternodeRanks;
 
     // scan for winner
     BOOST_FOREACH(CMasternode& mn, vMasternodes) {
@@ -408,6 +513,37 @@ CMasternode* CMasternodeMan::GetMasternodeByRank(int nRank, int64_t nBlockHeight
         if(mn.protocolVersion < minProtocol) continue;
         if(!mn.IsEnabled()) {
             continue;
+        }
+
+        uint256 n = mn.CalculateScore(1, nBlockHeight);
+        unsigned int n2 = 0;
+        memcpy(&n2, &n, sizeof(n2));
+
+        vecMasternodeScores.push_back(make_pair(n2, mn));
+    }
+
+    sort(vecMasternodeScores.rbegin(), vecMasternodeScores.rend(), CompareValueOnlyMN());
+
+    int rank = 0;
+    BOOST_FOREACH (PAIRTYPE(unsigned int, CMasternode)& s, vecMasternodeScores){
+        rank++;
+        vecMasternodeRanks.push_back(make_pair(rank, s.second));
+    }
+
+    return vecMasternodeRanks;
+}
+
+CMasternode* CMasternodeMan::GetMasternodeByRank(int nRank, int64_t nBlockHeight, int minProtocol, bool fOnlyActive)
+{
+    std::vector<pair<unsigned int, CTxIn> > vecMasternodeScores;
+
+    // scan for winner
+    BOOST_FOREACH(CMasternode& mn, vMasternodes) {
+
+        if(mn.protocolVersion < minProtocol) continue;
+        if(fOnlyActive) {
+            mn.Check();
+            if(!mn.IsEnabled()) continue;
         }
 
         uint256 n = mn.CalculateScore(1, nBlockHeight);
@@ -432,9 +568,6 @@ CMasternode* CMasternodeMan::GetMasternodeByRank(int nRank, int64_t nBlockHeight
 
 void CMasternodeMan::ProcessMasternodeConnections()
 {
-    //we don't care about this for testing
-    if(TestNet()) return;
-
     LOCK(cs_vNodes);
 
     if(!darkSendPool.pSubmittedToMasternode) return;
@@ -450,27 +583,15 @@ void CMasternodeMan::ProcessMasternodeConnections()
     }
 }
 
-void CMasternodeMan::RelayMasternodeEntry(const CTxIn vin, const CService addr, const std::vector<unsigned char> vchSig, const int64_t nNow, const CPubKey pubkey, const CPubKey pubkey2, const int count, const int current, const int64_t lastUpdated, const int protocolVersion)
-{
-    LOCK(cs_vNodes);
-    BOOST_FOREACH(CNode* pnode, vNodes)
-        pnode->PushMessage("dsee", vin, addr, vchSig, nNow, pubkey, pubkey2, count, current, lastUpdated, protocolVersion);
-}
-
-void CMasternodeMan::RelayMasternodeEntryPing(const CTxIn vin, const std::vector<unsigned char> vchSig, const int64_t nNow, const bool stop)
-{
-    LOCK(cs_vNodes);
-    BOOST_FOREACH(CNode* pnode, vNodes)
-        pnode->PushMessage("dseep", vin, vchSig, nNow, stop);
-}
-
 void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CDataStream& vRecv)
 {
 
-    if(fLiteMode) return; //disable all darksend/masternode related functionality
-    if(IsInitialBlockDownload()) return;
+    //Normally would disable functionality, NEED this enabled for staking.
+    //if(fLiteMode) return;
 
-    LOCK(cs);
+    if(!darkSendPool.IsBlockchainSynced()) return;
+
+    LOCK(cs_process_message);
 
     if (strCommand == "dsee") { //DarkSend Election Entry
 
@@ -488,16 +609,8 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
 
         // 70047 and greater
         vRecv >> vin >> addr >> vchSig >> sigTime >> pubkey >> pubkey2 >> count >> current >> lastUpdated >> protocolVersion;
-        
-        //Debug
-        //LogPrintf("Capture masternode packet:\n");
-        //LogPrintf("Vin:%s\n", vin.ToString().c_str());
-        //LogPrintf("Addr:%s\n", addr.ToString().c_str());
-        //LogPrintf("sigTime:%lld\n", sigTime);
-        //LogPrintf("LastUpdated:%lld\n", lastUpdated);
-        //LogPrintf("ProtocolVersion:%d\n", protocolVersion);
-        
-        //Bad nodes check
+
+        //Invalid nodes check
         if (sigTime < 1426700641) {
             //LogPrintf("dsee - Bad packet\n");
             return;
@@ -519,13 +632,6 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
             return;
         }
         
-        //LogPrintf("Capture masternode packet:\n");
-        //LogPrintf("Vin:%s\n", vin.ToString().c_str());
-        //LogPrintf("Addr:%s\n", addr.ToString().c_str());
-        //LogPrintf("sigTime:%lld\n", sigTime);
-        //LogPrintf("LastUpdated:%lld\n", lastUpdated);
-        //LogPrintf("ProtocolVersion:%d\n", protocolVersion);
-        
         // make sure signature isn't in the future (past is OK)
         if (sigTime > GetAdjustedTime() + 60 * 60) {
             LogPrintf("dsee - Signature rejected, too far into the future %s\n", vin.ToString().c_str());
@@ -540,9 +646,8 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
 
         strMessage = addr.ToString() + boost::lexical_cast<std::string>(sigTime) + vchPubKey + vchPubKey2 + boost::lexical_cast<std::string>(protocolVersion);
 
-        if(protocolVersion < MIN_PEER_PROTO_VERSION) {
+        if(protocolVersion < MIN_POOL_PEER_PROTO_VERSION) {
             LogPrintf("dsee - ignoring outdated masternode %s protocol version %d\n", vin.ToString().c_str(), protocolVersion);
-            LogPrintf("Addr:%s\n", addr.ToString().c_str());
             return;
         }
 
@@ -564,6 +669,11 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
             return;
         }
 
+        if(!vin.scriptSig.empty()) {
+            LogPrintf("dsee - Ignore Not Empty ScriptSig %s\n",vin.ToString().c_str());
+            return;
+        }
+
         std::string errorMessage = "";
         if(!darkSendSigner.VerifyMessage(pubkey, vchSig, strMessage, errorMessage)){
             LogPrintf("dsee - Got bad masternode address signature\n");
@@ -573,7 +683,7 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
 
         //search existing masternode list, this is where we update existing masternodes with new dsee broadcasts
         CMasternode* pmn = this->Find(vin);
-//        if(pmn != NULL)
+        // if we are a masternode but with undefined vin and this dsee is ours (matches our Masternode privkey) then just skip this part
         if(pmn != NULL && !(fMasterNode && activeMasternode.vin == CTxIn() && pubkey2 == activeMasternode.pubKeyMasternode))
         {
             // count == -1 when it's a new entry
@@ -607,20 +717,24 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
             return;
         }
 
-        if(fDebug) LogPrintf("dsee - Got NEW masternode entry %s\n", addr.ToString().c_str());
+        LogPrint("masternode", "dsee - Got NEW masternode entry %s\n", addr.ToString().c_str());
 
         // make sure it's still unspent
         //  - this is checked later by .check() in many places and by ThreadCheckDarkSendPool()
 
         CValidationState state;
         CTransaction tx = CTransaction();
-        CTxOut vout = CTxOut((GetMNCollateral(pindexBest->nHeight)-1)*COIN, darkSendPool.collateralPubKey);
+        CTxOut vout = CTxOut(499*COIN, darkSendPool.collateralPubKey);
         tx.vin.push_back(vin);
         tx.vout.push_back(vout);
-        bool* pfMissingInputs = new bool;
-        *pfMissingInputs = false;
-        if(AcceptableInputs(mempool, tx, false, pfMissingInputs)){
-            if(fDebug) LogPrintf("dsee - Accepted masternode entry %i %i\n", count, current);
+        bool fAcceptable = false;
+        {
+            TRY_LOCK(cs_main, lockMain);
+            if(!lockMain) return;
+            fAcceptable = AcceptableInputs(mempool, tx, false, NULL);
+        }
+        if(fAcceptable){
+            LogPrint("masternode", "dsee - Accepted masternode entry %i %i\n", count, current);
 
             if(GetInputAge(vin) < MASTERNODE_MIN_CONFIRMATIONS){
                 LogPrintf("dsee - Input must have least %d confirmations\n", MASTERNODE_MIN_CONFIRMATIONS);
@@ -629,13 +743,13 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
             }
 
             // verify that sig time is legit in past
-            // should be at least not earlier than block when 1000 DRK tx got MASTERNODE_MIN_CONFIRMATIONS
+            // should be at least not earlier than block when 10000 TansferCoin tx got MASTERNODE_MIN_CONFIRMATIONS
             uint256 hashBlock = 0;
             GetTransaction(vin.prevout.hash, tx, hashBlock);
             map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.find(hashBlock);
            if (mi != mapBlockIndex.end() && (*mi).second)
             {
-                CBlockIndex* pMNIndex = (*mi).second; // block for 1000 DRK tx -> 1 confirmation
+                CBlockIndex* pMNIndex = (*mi).second; // block for 10000 TansferCoin tx -> 1 confirmation
                 CBlockIndex* pConfIndex = FindBlockByHeight((pMNIndex->nHeight + MASTERNODE_MIN_CONFIRMATIONS - 1)); // block where tx got MASTERNODE_MIN_CONFIRMATIONS
                 if(pConfIndex->GetBlockTime() > sigTime)
                 {
@@ -698,7 +812,7 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
 
         // see if we have this masternode
         CMasternode* pmn = this->Find(vin);
-        if(pmn != NULL && pmn->protocolVersion >= CMasternode::minProtoVersion)
+        if(pmn != NULL && pmn->protocolVersion >= MIN_POOL_PEER_PROTO_VERSION)
         {
             // LogPrintf("dseep - Found corresponding mn for vin: %s\n", vin.ToString().c_str());
             // take this only if it's newer
@@ -731,7 +845,7 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
             return;
         }
 
-        if(fDebug) LogPrintf("dseep - Couldn't find masternode entry %s\n", vin.ToString().c_str());
+        LogPrint("masternode", "dseep - Couldn't find masternode entry %s\n", vin.ToString().c_str());
 
         std::map<COutPoint, int64_t>::iterator i = mWeAskedForMasternodeListEntry.find(vin.prevout);
         if (i != mWeAskedForMasternodeListEntry.end())
@@ -746,6 +860,40 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
         pfrom->PushMessage("dseg", vin);
         int64_t askAgain = GetTime()+ MASTERNODE_MIN_DSEEP_SECONDS;
         mWeAskedForMasternodeListEntry[vin.prevout] = askAgain;
+
+    } else if (strCommand == "mvote") { //Masternode Vote
+
+        CTxIn vin;
+        vector<unsigned char> vchSig;
+        int nVote;
+        vRecv >> vin >> vchSig >> nVote;
+
+        // see if we have this Masternode
+        CMasternode* pmn = this->Find(vin);
+        if(pmn != NULL)
+        {
+            if((GetAdjustedTime() - pmn->lastVote) > (60*60))
+            {
+                std::string strMessage = vin.ToString() + boost::lexical_cast<std::string>(nVote);
+
+                std::string errorMessage = "";
+                if(!darkSendSigner.VerifyMessage(pmn->pubkey2, vchSig, strMessage, errorMessage))
+                {
+                    LogPrintf("mvote - Got bad Masternode address signature %s \n", vin.ToString().c_str());
+                    return;
+                }
+
+                pmn->nVote = nVote;
+                pmn->lastVote = GetAdjustedTime();
+
+                //send to all peers
+                LOCK(cs_vNodes);
+                BOOST_FOREACH(CNode* pnode, vNodes)
+                    pnode->PushMessage("mvote", vin, vchSig, nVote);
+            }
+
+            return;
+        }
 
     } else if (strCommand == "dseg") { //Get masternode list or specific entry
 
@@ -781,7 +929,7 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
 
             if(mn.IsEnabled())
             {
-                if(fDebug) LogPrintf("dseg - Sending masternode entry - %s \n", mn.addr.ToString().c_str());
+                LogPrint("masternode", "dseg - Sending masternode entry - %s \n", mn.addr.ToString().c_str());
                 if(vin == CTxIn()){
                     pfrom->PushMessage("dsee", mn.vin, mn.addr, mn.sig, mn.sigTime, mn.pubkey, mn.pubkey2, count, i, mn.lastTimeSeen, mn.protocolVersion);
                 } else if (vin == mn.vin) {
@@ -796,6 +944,34 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
         LogPrintf("dseg - Sent %d masternode entries to %s\n", i, pfrom->addr.ToString().c_str());
     }
 
+}
+
+void CMasternodeMan::RelayMasternodeEntry(const CTxIn vin, const CService addr, const std::vector<unsigned char> vchSig, const int64_t nNow, const CPubKey pubkey, const CPubKey pubkey2, const int count, const int current, const int64_t lastUpdated, const int protocolVersion)
+{
+    LOCK(cs_vNodes);
+    BOOST_FOREACH(CNode* pnode, vNodes)
+        pnode->PushMessage("dsee", vin, addr, vchSig, nNow, pubkey, pubkey2, count, current, lastUpdated, protocolVersion);
+}
+
+void CMasternodeMan::RelayMasternodeEntryPing(const CTxIn vin, const std::vector<unsigned char> vchSig, const int64_t nNow, const bool stop)
+{
+    LOCK(cs_vNodes);
+    BOOST_FOREACH(CNode* pnode, vNodes)
+        pnode->PushMessage("dseep", vin, vchSig, nNow, stop);
+}
+
+void CMasternodeMan::Remove(CTxIn vin)
+{
+    LOCK(cs);
+
+    vector<CMasternode>::iterator it = vMasternodes.begin();
+    while(it != vMasternodes.end()){
+        if((*it).vin == vin){
+            LogPrint("masternode", "CMasternodeMan: Removing Masternode %s - %i now\n", (*it).addr.ToString().c_str(), size() - 1);
+            vMasternodes.erase(it);
+            break;
+        }
+    }
 }
 
 std::string CMasternodeMan::ToString() const

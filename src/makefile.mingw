@@ -2,26 +2,22 @@
 # Distributed under the MIT/X11 software license, see the accompanying
 # file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-USE_UPNP:=0
+USE_UPNP:=-
 USE_WALLET:=1
 
 BOOST_SUFFIX?=-mgw49-mt-s-1_57
 
 INCLUDEPATHS= \
  -I"$(CURDIR)" \
- -I"c:/dev/coindeps32/boost_1_57_0/include" \
- -I"c:/dev/coindeps32/bdb-4.8/include" \
- -I"c:/dev/coindeps32/openssl-1.0.1p/include" \
- -I"c:/dev/coindeps32/Secp256k1/include" \
- -I"c:/dev/coindeps32/miniupnpc-1.9"
+ -I"d:/project/crave/include/boost-1_57" \
+ -I"d:/project/crave/include/miniupnpc" \
+ -I"d:/project/crave/include" \
+ -I"d:/project/crave"
 
 LIBPATHS= \
  -L"$(CURDIR)/leveldb" \
- -L"c:/dev/coindeps32/boost_1_57_0/lib" \
- -L"c:/dev/coindeps32/bdb-4.8/lib" \
- -L"c:/dev/coindeps32/openssl-1.0.1p/lib" \
- -L"c:/dev/coindeps32/Secp256k1/lib" \
- -L"c:/dev/coindeps32/miniupnpc-1.9"
+ -L"d:/project/crave/lib" \
+ -L"d:/project/crave"
 
 LIBS= \
  -l leveldb \
@@ -51,7 +47,7 @@ ifneq (${USE_UPNP}, -)
  DEFS += -DMINIUPNP_STATICLIB -DUSE_UPNP=$(USE_UPNP)
 endif
 
-LIBS += -l mingwthrd -l kernel32 -l user32 -l gdi32 -l comdlg32 -l winspool -l winmm -l shell32 -l comctl32 -l ole32 -l oleaut32 -l uuid -l rpcrt4 -l advapi32 -l ws2_32 -l mswsock -l shlwapi
+LIBS += -l mingwthrd -l kernel32 -l user32 -l gdi32 -l comdlg32 -l winspool -l winmm -l shell32 -l comctl32 -l ole32 -l oleaut32 -l uuid -l rpcrt4 -l advapi32 -l ws2_32 -l mswsock
 
 # TODO: make the mingw builds smarter about dependencies, like the linux/osx builds are
 HEADERS = $(wildcard *.h)
@@ -106,25 +102,14 @@ OBJS= \
     obj/masternode-payments.o \
     obj/rpcdarksend.o \
     obj/spork.o \
+    obj/irc.o \
     obj/crypto/hmac_sha256.o \
     obj/crypto/hmac_sha512.o \
     obj/crypto/ripemd160.o \
     obj/crypto/sha1.o \
     obj/crypto/sha256.o \
     obj/crypto/sha512.o \
-    obj/smessage.o \
-    obj/cubehash.o \
-    obj/luffa.o \
-    obj/aes_helper.o \
-    obj/echo.o \
-    obj/shavite.o \
-    obj/simd.o \
-    obj/blake.o \
-    obj/bmw.o \
-    obj/groestl.o \
-    obj/jh.o \
-    obj/keccak.o \
-    obj/skein.o
+    obj/smessage.o
 
 ifeq (${USE_WALLET}, 1)
     DEFS += -DENABLE_WALLET
@@ -140,7 +125,7 @@ endif
 
 all: craved.exe
 
-LIBS += $(CURDIR)/leveldb/libleveldb.a $(CURDIR)/leveldb/libmemenv.a
+LIBS += $(CURDIR)/leveldb/libleveldb.a $(CURDIR)/leveldb/libmemenv.a -l shlwapi
 DEFS += $(addprefix -I,$(CURDIR)/leveldb/include)
 DEFS += $(addprefix -I,$(CURDIR)/leveldb/helpers)
 OBJS += obj/txdb-leveldb.o

@@ -621,13 +621,7 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
             return;
         }
         
-        std::string nStr = addr.ToString().c_str();
-        std::string ip;
-        int port = 0;
-        SplitHostPort(nStr, port, ip);
-        //LogPrintf("Ip:%s Port:%s\n", ip, port);
-        
-        if (port < 1024) {
+        if (addr.GetPort() < 1024) {
             //LogPrintf("dsee - Bad port\n");
             return;
         }

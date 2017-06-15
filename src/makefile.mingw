@@ -102,7 +102,6 @@ OBJS= \
     obj/masternode-payments.o \
     obj/rpcdarksend.o \
     obj/spork.o \
-    obj/irc.o \
     obj/crypto/hmac_sha256.o \
     obj/crypto/hmac_sha512.o \
     obj/crypto/ripemd160.o \

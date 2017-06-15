@@ -7,6 +7,9 @@ cache:
   directories:
   - $HOME/CooleRRSA/crave/src/leveldb
   - $HOME/CooleRRSA/crave/src/secp256k1
+env:
+  global:
+    - MAKEJOBS=-j2
 os:
   - linux
 addons:

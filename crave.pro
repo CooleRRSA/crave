@@ -1,6 +1,6 @@
 TEMPLATE = app
 TARGET = crave-qt
-VERSION = 2.0.3.0
+VERSION = 2.0.3.3
 INCLUDEPATH += src src/json src/qt src/qt/plugins/mrichtexteditor
 QT += network printsupport
 DEFINES += ENABLE_WALLET
@@ -29,21 +29,21 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 # workaround for boost 1.58
 DEFINES += BOOST_VARIANT_USE_RELAXED_GET_BY_DEFAULT
 
-BOOST_LIB_SUFFIX=-mgw49-mt-s-1_57
-BOOST_INCLUDE_PATH=d:/project/crave/include/boost-1_57
-BOOST_LIB_PATH=d:/project/crave/lib
-BDB_INCLUDE_PATH=d:/project/crave/include/
-BDB_LIB_PATH=d:/project/crave/lib
-OPENSSL_INCLUDE_PATH=d:/project/crave/include/
-OPENSSL_LIB_PATH=d:/project/crave/lib
-MINIUPNPC_INCLUDE_PATH=d:/project/crave/include/
-MINIUPNPC_LIB_PATH=d:/project/crave/lib
-LIBPNG_INCLUDE_PATH=d:/project/crave/include/
-LIBPNG_LIB_PATH=d:/project/crave/lib
-QRENCODE_INCLUDE_PATH=d:/project/crave/include/
-QRENCODE_LIB_PATH=d:/project/crave/lib
-SECP256K1_LIB_PATH = d:/project/crave/include/
-SECP256K1_INCLUDE_PATH = d:/project/crave/lib
+win32:BOOST_LIB_SUFFIX=-mgw48-mt-s-1_55
+win32:BOOST_INCLUDE_PATH=d:/project/crave/include/boost-1_55
+win32:BOOST_LIB_PATH=d:/project/crave/lib
+win32:BDB_INCLUDE_PATH=d:/project/crave/include/
+win32:BDB_LIB_PATH=d:/project/crave/lib
+win32:OPENSSL_INCLUDE_PATH=d:/project/crave/include/
+win32:OPENSSL_LIB_PATH=d:/project/crave/lib
+win32:MINIUPNPC_INCLUDE_PATH=d:/project/crave/include/
+win32:MINIUPNPC_LIB_PATH=d:/project/crave/lib
+win32:LIBPNG_INCLUDE_PATH=d:/project/crave/include/
+win32:LIBPNG_LIB_PATH=d:/project/crave/lib
+win32:QRENCODE_INCLUDE_PATH=d:/project/crave/include/
+win32:QRENCODE_LIB_PATH=d:/project/crave/lib
+win32:SECP256K1_LIB_PATH = d:/project/crave/include/
+win32:SECP256K1_INCLUDE_PATH = d:/project/crave/lib
 
 OBJECTS_DIR = build
 MOC_DIR = build
@@ -495,7 +495,7 @@ isEmpty(BOOST_LIB_SUFFIX) {
 
 isEmpty(BOOST_THREAD_LIB_SUFFIX) {
     BOOST_THREAD_LIB_SUFFIX = $$BOOST_LIB_SUFFIX
-    #win32:BOOST_THREAD_LIB_SUFFIX = $$BOOST_LIB_SUFFIX
+    #win32:BOOST_THREAD_LIB_SUFFIX = _win32$$BOOST_LIB_SUFFIX
     #else:BOOST_THREAD_LIB_SUFFIX = $$BOOST_LIB_SUFFIX
 }
 

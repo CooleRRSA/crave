@@ -701,6 +701,9 @@ bool AppInit2(boost::thread_group& threadGroup)
             if (!nets.count(net))
                 SetLimited(net);
         }
+    } else {
+        SetReachable(NET_IPV4);
+        SetReachable(NET_IPV6);
     }
 
     CService addrProxy;

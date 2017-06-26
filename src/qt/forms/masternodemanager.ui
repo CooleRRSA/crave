@@ -42,7 +42,7 @@
         </attribute>
         <layout class="QGridLayout" name="gridLayout">
          <item row="1" column="0">
-          <widget class="QTableWidget" name="tableWidget">
+          <widget class="QTableWidget" name="tableWidgetMasternodes">
            <property name="editTriggers">
             <set>QAbstractItemView::NoEditTriggers</set>
            </property>
@@ -66,6 +66,11 @@
            <column>
             <property name="text">
              <string>Rank</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>Protocol</string>
             </property>
            </column>
            <column>

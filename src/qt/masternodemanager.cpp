@@ -20,6 +20,7 @@ using namespace json_spirit;
 using namespace std;
 
 #include <QAbstractItemDelegate>
+#include <QClipboard>
 #include <QPainter>
 #include <QTimer>
 #include <QDebug>
@@ -29,6 +30,7 @@ using namespace std;
 #include <QApplication>
 #include <QClipboard>
 #include <QMessageBox>
+#include <QItemSelectionModel>
 
 MasternodeManager::MasternodeManager(QWidget *parent) :
     QWidget(parent),
@@ -55,6 +57,16 @@ MasternodeManager::MasternodeManager(QWidget *parent) :
     ui->tableWidgetMasternodes->setColumnWidth(4, columnActiveWidth);
     ui->tableWidgetMasternodes->setColumnWidth(5, columnLastSeenWidth);
     
+    ui->tableWidgetMasternodes->setContextMenuPolicy(Qt::CustomContextMenu);
+    QAction *copyAddressAction = new QAction(tr("Copy Address"), this);
+    QAction *copyPubkeyAction = new QAction(tr("Copy Pubkey"), this);
+    contextMenu = new QMenu();
+    contextMenu->addAction(copyAddressAction);
+    contextMenu->addAction(copyPubkeyAction);
+    connect(ui->tableWidgetMasternodes, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showContextMenu(const QPoint&)));
+    connect(copyAddressAction, SIGNAL(triggered()), this, SLOT(copyAddress()));
+    connect(copyPubkeyAction, SIGNAL(triggered()), this, SLOT(copyPubkey()));
+        
     ui->tableWidgetMasternodes->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     ui->tableWidget_2->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
@@ -300,4 +312,48 @@ void MasternodeManager::on_UpdateButton_clicked()
             }
         }
     }
+}
+
+void MasternodeManager::showContextMenu(const QPoint& point)
+{
+    QTableWidgetItem* item = ui->tableWidgetMasternodes->itemAt(point);
+    if (item) contextMenu->exec(QCursor::pos());
+}
+
+void MasternodeManager::copyAddress()
+{
+    std::string sData;
+    int row;
+    QItemSelectionModel* selectionModel = ui->tableWidgetMasternodes->selectionModel();
+    QModelIndexList selectedRows = selectionModel->selectedRows();
+    if(selectedRows.count() == 0)
+        return;
+    
+    for (int i =0; i < selectedRows.count(); i++)
+    {
+        QModelIndex index = selectedRows.at(i);
+        row = index.row();
+        sData += ui->tableWidgetMasternodes->item(row, 0)->text().toStdString() + "\n";
+    }
+    
+    QApplication::clipboard()->setText(QString::fromStdString(sData));
+}
+
+void MasternodeManager::copyPubkey()
+{
+    std::string sData;
+    int row;
+    QItemSelectionModel* selectionModel = ui->tableWidgetMasternodes->selectionModel();
+    QModelIndexList selectedRows = selectionModel->selectedRows();
+    if(selectedRows.count() == 0)
+        return;
+    
+    for (int i =0; i < selectedRows.count(); i++)
+    {
+        QModelIndex index = selectedRows.at(i);
+        row = index.row();
+        sData += ui->tableWidgetMasternodes->item(row, 6)->text().toStdString() + "\n";
+    }
+    
+    QApplication::clipboard()->setText(QString::fromStdString(sData));
 }

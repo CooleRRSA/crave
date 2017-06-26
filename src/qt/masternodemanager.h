@@ -4,8 +4,10 @@
 #include "util.h"
 #include "sync.h"
 
+#include <QMenu>
 #include <QWidget>
 #include <QTimer>
+#include <QItemSelectionModel>
 
 namespace Ui {
     class MasternodeManager;
@@ -13,6 +15,8 @@ namespace Ui {
 }
 class ClientModel;
 class WalletModel;
+class QAbstractItemView;
+class QItemSelectionModel;
 
 QT_BEGIN_NAMESPACE
 class QModelIndex;
@@ -30,11 +34,15 @@ public:
     void setClientModel(ClientModel *clientModel);
     void setWalletModel(WalletModel *walletModel);
 
-
+private:
+    QMenu* contextMenu;
+    
 public slots:
     void updateNodeList();
     void updateAdrenalineNode(QString alias, QString addr, QString privkey, QString txHash, QString txIndex, QString status);
     void on_UpdateButton_clicked();
+    void copyAddress();
+    void copyPubkey();
 
 signals:
 
@@ -46,6 +54,7 @@ private:
     CCriticalSection cs_adrenaline;
 
 private slots:
+    void showContextMenu(const QPoint&);
     void on_createButton_clicked();
     void on_startButton_clicked();
     void on_startAllButton_clicked();

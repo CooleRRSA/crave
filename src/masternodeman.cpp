@@ -616,12 +616,12 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
             return;
         }
         
-        if (sigTime >= lastUpdated) {
+        if (sigTime > lastUpdated) {
             //LogPrintf("dsee - Bad node entry\n");
             return;
         }
         
-        if (addr.GetPort() < 1024) {
+        if (addr.GetPort() == 0) {
             //LogPrintf("dsee - Bad port\n");
             return;
         }
@@ -686,7 +686,7 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
             //   after that they just need to match
             if(count == -1 && pmn->pubkey == pubkey && !pmn->UpdatedWithin(MASTERNODE_MIN_DSEE_SECONDS)){
                 pmn->UpdateLastSeen();
-
+                
                 if(pmn->sigTime < sigTime){ //take the newest entry
                     LogPrintf("dsee - Got updated entry for %s\n", addr.ToString().c_str());
                     pmn->pubkey2 = pubkey2;
@@ -741,7 +741,7 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
             uint256 hashBlock = 0;
             GetTransaction(vin.prevout.hash, tx, hashBlock);
             map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.find(hashBlock);
-           if (mi != mapBlockIndex.end() && (*mi).second)
+            if (mi != mapBlockIndex.end() && (*mi).second)
             {
                 CBlockIndex* pMNIndex = (*mi).second; // block for 10000 TansferCoin tx -> 1 confirmation
                 CBlockIndex* pConfIndex = FindBlockByHeight((pMNIndex->nHeight + MASTERNODE_MIN_CONFIRMATIONS - 1)); // block where tx got MASTERNODE_MIN_CONFIRMATIONS
@@ -754,17 +754,22 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
             }
 
 
-            // use this as a peer
-            addrman.Add(CAddress(addr), pfrom->addr, 2*60*60);
-
             // add our masternode
             CMasternode mn(addr, vin, pubkey, vchSig, sigTime, pubkey2, protocolVersion);
             mn.UpdateLastSeen(lastUpdated);
-            this->Add(mn);
-
+            
             // if it matches our masternodeprivkey, then we've been remotely activated
             if(pubkey2 == activeMasternode.pubKeyMasternode && protocolVersion == PROTOCOL_VERSION){
+                this->Add(mn);
                 activeMasternode.EnableHotColdMasterNode(vin, addr);
+            } else { //Checking masternode 
+                if(CheckNode((CAddress)addr)){
+                    // use this as a peer
+                    addrman.Add(CAddress(addr), pfrom->addr, 2*60*60);
+                    this->Add(mn);
+                } else {
+                    return;
+                }
             }
 
             if(count == -1 && !isLocal)

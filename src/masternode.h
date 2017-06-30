@@ -83,7 +83,7 @@ public:
     int nScanningErrorCount;
     int nLastScanningErrorBlockHeight;
     int64_t nLastPaid;
-
+    bool isPortOpen;
 
     CMasternode();
     CMasternode(const CMasternode& other);
@@ -117,6 +117,7 @@ public:
         swap(first.nScanningErrorCount, second.nScanningErrorCount);
         swap(first.nLastScanningErrorBlockHeight, second.nLastScanningErrorBlockHeight);
         swap(first.nLastPaid, second.nLastPaid);
+        swap(first.isPortOpen, second.isPortOpen);
     }
 
     CMasternode& operator=(CMasternode from)
@@ -164,6 +165,7 @@ public:
                 READWRITE(nScanningErrorCount);
                 READWRITE(nLastScanningErrorBlockHeight);
                 READWRITE(nLastPaid);
+                READWRITE(isPortOpen);
         }
     )
 
@@ -181,6 +183,11 @@ public:
         }
     }
 
+    void ChangePortStatus(bool status)
+    {
+        isPortOpen = status;
+    }
+    
     inline uint64_t SliceHash(uint256& hash, int slice)
     {
         uint64_t n = 0;
@@ -204,7 +211,7 @@ public:
 
     bool IsEnabled()
     {
-        return activeState == MASTERNODE_ENABLED;
+        return isPortOpen && activeState == MASTERNODE_ENABLED;
     }
 
     int GetMasternodeInputAge()

@@ -195,9 +195,6 @@ bool CMasternodeMan::Add(CMasternode &mn)
 {
     LOCK(cs);
 
-    if (!mn.IsEnabled())
-        return false;
-
     CMasternode *pmn = Find(mn.vin);
 
     if (pmn == NULL)
@@ -686,8 +683,13 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
             //   after that they just need to match
             if(count == -1 && pmn->pubkey == pubkey && !pmn->UpdatedWithin(MASTERNODE_MIN_DSEE_SECONDS)){
                 pmn->UpdateLastSeen();
-                
                 if(pmn->sigTime < sigTime){ //take the newest entry
+                    if (!CheckNode((CAddress)addr)){
+                        pmn->isPortOpen = false;
+                    } else {
+                        pmn->isPortOpen = true;
+                        addrman.Add(CAddress(addr), pfrom->addr, 2*60*60); // use this as a peer
+                    }
                     LogPrintf("dsee - Got updated entry for %s\n", addr.ToString().c_str());
                     pmn->pubkey2 = pubkey2;
                     pmn->sigTime = sigTime;
@@ -753,25 +755,23 @@ void CMasternodeMan::ProcessMessage(CNode* pfrom, std::string& strCommand, CData
                 }
             }
 
-
             // add our masternode
             CMasternode mn(addr, vin, pubkey, vchSig, sigTime, pubkey2, protocolVersion);
             mn.UpdateLastSeen(lastUpdated);
+
+            if (!CheckNode((CAddress)addr)){
+                mn.ChangePortStatus(false);
+            } else {
+                addrman.Add(CAddress(addr), pfrom->addr, 2*60*60); // use this as a peer
+            }
+            
+            this->Add(mn);
             
             // if it matches our masternodeprivkey, then we've been remotely activated
             if(pubkey2 == activeMasternode.pubKeyMasternode && protocolVersion == PROTOCOL_VERSION){
-                this->Add(mn);
                 activeMasternode.EnableHotColdMasterNode(vin, addr);
-            } else { //Checking masternode 
-                if(CheckNode((CAddress)addr)){
-                    // use this as a peer
-                    addrman.Add(CAddress(addr), pfrom->addr, 2*60*60);
-                    this->Add(mn);
-                } else {
-                    return;
-                }
             }
-
+            
             if(count == -1 && !isLocal)
                 mnodeman.RelayMasternodeEntry(vin, addr, vchSig, sigTime, pubkey, pubkey2, count, current, lastUpdated, protocolVersion);
 

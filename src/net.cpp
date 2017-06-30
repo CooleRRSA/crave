@@ -379,8 +379,9 @@ bool CheckNode(CAddress addrConnect)
     if (ConnectSocket(addrConnect, hSocket, nConnectTimeout, &proxyConnectionFailed))
     {
         LogPrint("net", "connected masternode %s\n", addrConnect.ToString());
-
-        // Set to non-blocking
+        closesocket(hSocket);
+        
+/*        // Set to non-blocking
 #ifdef WIN32
         u_long nOne = 1;
         if (ioctlsocket(hSocket, FIONBIO, &nOne) == SOCKET_ERROR)
@@ -392,7 +393,7 @@ bool CheckNode(CAddress addrConnect)
         CNode* pnode = new CNode(hSocket, addrConnect, "", false);
         // Close connection
         pnode->CloseSocketDisconnect();
-        
+*/        
         return true;
     }
     LogPrint("net", "connecting to masternode %s failed\n", addrConnect.ToString());

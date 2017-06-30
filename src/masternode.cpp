@@ -87,6 +87,7 @@ CMasternode::CMasternode()
     nLastScanningErrorBlockHeight = 0;
     //mark last paid as current for new entries
     nLastPaid = GetAdjustedTime();
+    isPortOpen = true;
 }
 
 CMasternode::CMasternode(const CMasternode& other)
@@ -113,6 +114,7 @@ CMasternode::CMasternode(const CMasternode& other)
     nLastScanningErrorBlockHeight = other.nLastScanningErrorBlockHeight;
     nLastPaid = other.nLastPaid;
     nLastPaid = GetAdjustedTime();
+    isPortOpen = other.isPortOpen;
 }
 
 CMasternode::CMasternode(CService newAddr, CTxIn newVin, CPubKey newPubkey, std::vector<unsigned char> newSig, int64_t newSigTime, CPubKey newPubkey2, int protocolVersionIn)
@@ -137,6 +139,7 @@ CMasternode::CMasternode(CService newAddr, CTxIn newVin, CPubKey newPubkey, std:
     lastVote = 0;
     nScanningErrorCount = 0;
     nLastScanningErrorBlockHeight = 0;
+    isPortOpen = true;
 }
 
 //

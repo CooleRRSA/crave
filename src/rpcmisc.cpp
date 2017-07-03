@@ -54,7 +54,9 @@ Value getinfo(const Array& params, bool fHelp)
 #endif
     obj.push_back(Pair("blocks",        (int)nBestHeight));
     obj.push_back(Pair("timeoffset",    (int64_t)GetTimeOffset()));
+#ifndef LOWMEM
     obj.push_back(Pair("moneysupply",   ValueFromAmount(pindexBest->nMoneySupply)));
+#endif
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.ToStringIPPort() : string())));
     obj.push_back(Pair("ip",            GetLocalAddress(NULL).ToStringIP()));

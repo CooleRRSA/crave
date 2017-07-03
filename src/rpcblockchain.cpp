@@ -119,7 +119,9 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool fPri
     result.push_back(Pair("height", blockindex->nHeight));
     result.push_back(Pair("version", block.nVersion));
     result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
+#ifndef LOWMEM
     result.push_back(Pair("mint", ValueFromAmount(blockindex->nMint)));
+#endif
     result.push_back(Pair("time", (int64_t)block.GetBlockTime()));
     result.push_back(Pair("nonce", (uint64_t)block.nNonce));
     result.push_back(Pair("bits", strprintf("%08x", block.nBits)));
@@ -135,7 +137,6 @@ Object blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool fPri
     result.push_back(Pair("proofhash", blockindex->hashProof.GetHex()));
     result.push_back(Pair("entropybit", (int)blockindex->GetStakeEntropyBit()));
     result.push_back(Pair("modifier", strprintf("%016x", blockindex->nStakeModifier)));
-    result.push_back(Pair("modifierv2", blockindex->bnStakeModifierV2.GetHex()));
     Array txinfo;
     BOOST_FOREACH (const CTransaction& tx, block.vtx)
     {

@@ -28,7 +28,7 @@ leveldb::DB *txdb; // global pointer for LevelDB object instance
 
 static leveldb::Options GetOptions() {
     leveldb::Options options;
-    int nCacheSizeMB = GetArg("-dbcache", 100);
+    int nCacheSizeMB = GetArg("-dbcache", 10);
     options.block_cache = leveldb::NewLRUCache(nCacheSizeMB * 1048576);
     options.filter_policy = leveldb::NewBloomFilterPolicy(10);
     return options;
@@ -366,11 +366,15 @@ bool CTxDB::LoadBlockIndex()
         pindexNew->nFile          = diskindex.nFile;
         pindexNew->nBlockPos      = diskindex.nBlockPos;
         pindexNew->nHeight        = diskindex.nHeight;
+#ifndef LOWMEM
         pindexNew->nMint          = diskindex.nMint;
         pindexNew->nMoneySupply   = diskindex.nMoneySupply;
+#endif
         pindexNew->nFlags         = diskindex.nFlags;
         pindexNew->nStakeModifier = diskindex.nStakeModifier;
+#ifndef LOWMEM
         pindexNew->bnStakeModifierV2 = diskindex.bnStakeModifierV2;
+#endif
         pindexNew->prevoutStake   = diskindex.prevoutStake;
         pindexNew->nStakeTime     = diskindex.nStakeTime;
         pindexNew->hashProof      = diskindex.hashProof;

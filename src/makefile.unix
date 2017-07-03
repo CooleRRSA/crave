@@ -4,6 +4,7 @@
 
 USE_UPNP:=0
 USE_WALLET:=1
+USE_LOWMEM:=0
 
 LINK:=$(CXX)
 ARCH:=$(system lscpu | head -n 1 | awk '{print $2}')
@@ -42,6 +43,10 @@ endif
 ifneq (${USE_UPNP}, -)
 	LIBS += -l miniupnpc
 	DEFS += -DUSE_UPNP=$(USE_UPNP)
+endif
+
+ifeq (${USE_LOWMEM}, 1)
+    DEFS += -DLOWMEM
 endif
 
 LIBS+= \

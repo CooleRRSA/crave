@@ -189,7 +189,8 @@ std::string HelpMessage()
     strUsage += "  -pid=<file>            " + _("Specify pid file (default: craved.pid)") + "\n";
     strUsage += "  -datadir=<dir>         " + _("Specify data directory") + "\n";
     strUsage += "  -wallet=<dir>          " + _("Specify wallet file (within data directory)") + "\n";
-    strUsage += "  -dbcache=<n>           " + _("Set database cache size in megabytes (default: 100)") + "\n";
+    strUsage += "  -dbcache=<n>           " + _("Set database cache size in megabytes (default: 10)") + "\n";
+    strUsage += "  -dbwalletcache=<n>     " + _("Set wallet database cache size in megabytes (default: 1)") + "\n";
     strUsage += "  -dblogsize=<n>         " + _("Set database disk log size in megabytes (default: 100)") + "\n";
     strUsage += "  -timeout=<n>           " + _("Specify connection timeout in milliseconds (default: 5000)") + "\n";
     strUsage += "  -proxy=<ip:port>       " + _("Connect through SOCKS5 proxy") + "\n";

@@ -13,6 +13,7 @@ STRIP=$(TARGET_PLATFORM)-w64-mingw32-strip
 
 USE_UPNP:=0
 USE_WALLET:=1
+USE_LOWMEM:=0
 
 INCLUDEPATHS= \
  -I"$(CURDIR)" \
@@ -50,6 +51,10 @@ ifneq (${USE_UPNP}, -)
 	LIBPATHS += -L"$(DEPSDIR)/miniupnpc"
 	LIBS += -l miniupnpc -l iphlpapi
 	DEFS += -DSTATICLIB -DUSE_UPNP=$(USE_UPNP)
+endif
+
+ifeq (${USE_LOWMEM}, 1)
+    DEFS += -DLOWMEM
 endif
 
 LIBS += -l mingwthrd -l kernel32 -l user32 -l gdi32 -l comdlg32 -l winspool -l winmm -l shell32 -l comctl32 -l ole32 -l oleaut32 -l uuid -l rpcrt4 -l advapi32 -l ws2_32 -l mswsock -l shlwapi

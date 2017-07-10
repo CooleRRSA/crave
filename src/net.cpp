@@ -954,14 +954,14 @@ void ThreadSocketHandler()
                     if (pnode->fInbound)
                         nInbound++;
             }
-            int nMaxOutbound = min(MAX_OUTBOUND_CONNECTIONS, (int)GetArg("-maxconnections", 125));
+            int nMaxConnections = GetArg("-maxconnections", 125);
             if (hSocket == INVALID_SOCKET)
             {
                 int nErr = WSAGetLastError();
                 if (nErr != WSAEWOULDBLOCK)
                     LogPrintf("socket error accept failed: %d\n", nErr);
             }
-            else if (nInbound >= nMaxOutbound)
+            else if (nInbound >= nMaxConnections - MAX_OUTBOUND_CONNECTIONS)
             {
                 closesocket(hSocket);
             }

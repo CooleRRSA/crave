@@ -1879,9 +1879,9 @@ Value keypoolrefill(const Array& params, bool fHelp)
     unsigned int nSize;
 
     if (fLiteMode)
-        nSize = max(GetArg("-keypool", 1000), (int64_t)0);
-    else
         nSize = max(GetArg("-keypool", 100), (int64_t)0);
+    else
+        nSize = max(GetArg("-keypool", 10), (int64_t)0);
 
     if (params.size() > 0) {
         if (params[0].get_int() < 0)

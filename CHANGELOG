@@ -37,3 +37,8 @@ Give you control of wallet database cache. By default cache database reduced to 
 *New build option for more memory usage optimization
 For masternode holders. Added new buildoption "LOWMEM" (disabled by default). If enabled, usage of memory can be reduced by an additional 37Mb (from ~315Mb to ~277Mb with default database caches). But it brokes compatibility with blockchain database and you will need to resync database. The choice yours.
 Recommended for masternode holders. Update your wallets.
+
+v2.0.3.8
+--------
+*Decreased keypool size (from:1000 to 100)
+*Fixed wrong calculation for incoming connections.

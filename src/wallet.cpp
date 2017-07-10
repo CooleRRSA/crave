@@ -3959,9 +3959,9 @@ bool CWallet::NewKeyPool()
         int64_t nKeys;
 
         if (fLiteMode)
-            nKeys = max(GetArg("-keypool", 100), (int64_t)0);
+            nKeys = max(GetArg("-keypool", 10), (int64_t)0);
         else
-            nKeys = max(GetArg("-keypool", 1000), (int64_t)0);
+            nKeys = max(GetArg("-keypool", 100), (int64_t)0);
 
         for (int i = 0; i < nKeys; i++)
         {
@@ -3991,9 +3991,9 @@ bool CWallet::TopUpKeyPool(unsigned int nSize)
         if (nSize > 0)
             nTargetSize = nSize;
         else if (fLiteMode)
-            nTargetSize = max(GetArg("-keypool", 100), (int64_t)0);
+            nTargetSize = max(GetArg("-keypool", 10), (int64_t)0);
         else
-            nTargetSize = max(GetArg("-keypool", 1000), (int64_t)0);
+            nTargetSize = max(GetArg("-keypool", 100), (int64_t)0);
 
         while (setKeyPool.size() < (nTargetSize + 1))
         {

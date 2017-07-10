@@ -9,7 +9,6 @@
 #include "net.h"
 #include "netbase.h"
 #include "rpcserver.h"
-#include "timedata.h"
 #include "util.h"
 #include "stealth.h"
 #include "spork.h"
@@ -58,7 +57,7 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("moneysupply",   ValueFromAmount(pindexBest->nMoneySupply)));
 #endif
     obj.push_back(Pair("connections",   (int)vNodes.size()));
-    obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.ToStringIPPort() : string())));
+    obj.push_back(Pair("proxy",         (proxy.first.IsValid() ? proxy.first.ToStringIPPort() : string())));
     obj.push_back(Pair("ip",            GetLocalAddress(NULL).ToStringIP()));
 
     //diff.push_back(Pair("proof-of-work",  GetDifficulty()));

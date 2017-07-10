@@ -42,3 +42,7 @@ v2.0.3.8
 --------
 *Decreased keypool size (from:1000 to 100)
 *Fixed wrong calculation for incoming connections.
+
+v2.0.4.0
+--------
+*Codebase upgrade and bugfix

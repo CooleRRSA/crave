@@ -8,6 +8,7 @@
 #include "strlcpy.h"
 #include "base58.h"
 #include "init.h"
+#include "addrman.h"
 
 #define PRIu64 "llu"
 
@@ -238,7 +239,7 @@ void ThreadIRCSeed2(void* parg)
         SOCKET hSocket;
 	bool bProxyConnectionFailed = false;
 	int ntimeout = 1000;
-        if (!ConnectSocket(addrConnect, hSocket, ntimeout, &bProxyConnectionFailed))
+        if (!ConnectSocket(addrConnect, hSocket))
         {
             LogPrintf("IRC connect failed\n");
             nErrorWait = nErrorWait * 11 / 10;

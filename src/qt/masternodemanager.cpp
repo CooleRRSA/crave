@@ -44,18 +44,16 @@ MasternodeManager::MasternodeManager(QWidget *parent) :
     ui->startButton->setEnabled(false);
 
     int columnAddressWidth = 200;
-    int columnRankWidth = 80;
     int columnProtocolWidth = 60;
     int columnStatusWidth = 80;
     int columnActiveWidth = 130;
     int columnLastSeenWidth = 130;
     
     ui->tableWidgetMasternodes->setColumnWidth(0, columnAddressWidth);
-    ui->tableWidgetMasternodes->setColumnWidth(1, columnRankWidth);
-    ui->tableWidgetMasternodes->setColumnWidth(2, columnProtocolWidth);
-    ui->tableWidgetMasternodes->setColumnWidth(3, columnStatusWidth);
-    ui->tableWidgetMasternodes->setColumnWidth(4, columnActiveWidth);
-    ui->tableWidgetMasternodes->setColumnWidth(5, columnLastSeenWidth);
+    ui->tableWidgetMasternodes->setColumnWidth(1, columnProtocolWidth);
+    ui->tableWidgetMasternodes->setColumnWidth(2, columnStatusWidth);
+    ui->tableWidgetMasternodes->setColumnWidth(3, columnActiveWidth);
+    ui->tableWidgetMasternodes->setColumnWidth(4, columnLastSeenWidth);
     
     ui->tableWidgetMasternodes->setContextMenuPolicy(Qt::CustomContextMenu);
     QAction *copyAddressAction = new QAction(tr("Copy Address"), this);
@@ -154,10 +152,8 @@ void MasternodeManager::updateNodeList()
     {
 
         // populate list
-        // Address, Rank, Protocol, Status, Active Seconds, Last Seen, Pub Key
+        // Address, Protocol, Status, Active Seconds, Last Seen, Pub Key
         QTableWidgetItem* addressItem = new QTableWidgetItem(QString::fromStdString(mn.addr.ToString()));
-        QString Rank = QString::number(mnodeman.GetMasternodeRank(mn.vin, pindexBest->nHeight));
-        QTableWidgetItem *rankItem = new QTableWidgetItem(Rank.rightJustified(2, '0', false));
         QTableWidgetItem* protocolItem = new QTableWidgetItem(QString::number(mn.protocolVersion));
         QTableWidgetItem* statusItem = new QTableWidgetItem(QString::number(mn.IsEnabled()));
         QTableWidgetItem *activeSecondsItem = new QTableWidgetItem(seconds_to_DHMS((qint64)(mn.lastTimeSeen - mn.sigTime)));
@@ -172,12 +168,11 @@ void MasternodeManager::updateNodeList()
 
         ui->tableWidgetMasternodes->insertRow(0);
         ui->tableWidgetMasternodes->setItem(0, 0, addressItem);
-        ui->tableWidgetMasternodes->setItem(0, 1, rankItem);
-        ui->tableWidgetMasternodes->setItem(0, 2, protocolItem);
-        ui->tableWidgetMasternodes->setItem(0, 3, statusItem);
-        ui->tableWidgetMasternodes->setItem(0, 4, activeSecondsItem);
-        ui->tableWidgetMasternodes->setItem(0, 5, lastSeenItem);
-        ui->tableWidgetMasternodes->setItem(0, 6, pubkeyItem);
+        ui->tableWidgetMasternodes->setItem(0, 1, protocolItem);
+        ui->tableWidgetMasternodes->setItem(0, 2, statusItem);
+        ui->tableWidgetMasternodes->setItem(0, 3, activeSecondsItem);
+        ui->tableWidgetMasternodes->setItem(0, 4, lastSeenItem);
+        ui->tableWidgetMasternodes->setItem(0, 5, pubkeyItem);
     }
 
     ui->countLabel->setText(QString::number(ui->tableWidgetMasternodes->rowCount()));

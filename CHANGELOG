@@ -46,3 +46,11 @@ v2.0.3.8
 v2.0.4.0
 --------
 *Codebase upgrade and bugfix
+
+v2.0.4.1
+--------
+*Mac OS compilation fix
+*Boost linux_x64 compile fix
+*Removed "Rank" column (no more UI freezes)
+*Decreased maximum inputs in stake combine
+*New feature in advanced coin control (Lock/Unlock inputs) (Resets after wallet reload)

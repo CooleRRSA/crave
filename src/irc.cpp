@@ -17,10 +17,7 @@ using namespace boost;
 
 int nGotIRCAddresses = 0;
 
-void ThreadIRCSeed2(void* parg);
-
-
-
+void ThreadIRCSeed2();
 
 #pragma pack(push, 1)
 struct ircaddr
@@ -57,11 +54,6 @@ bool DecodeAddress(string str, CService& addr)
     addr = CService(tmp.ip, ntohs(tmp.port));
     return true;
 }
-
-
-
-
-
 
 static bool Send(SOCKET hSocket, const char* pszSend)
 {
@@ -188,16 +180,14 @@ bool GetIPFromIRC(SOCKET hSocket, string strMyName, CNetAddr& ipRet)
     return true;
 }
 
-
-
-void ThreadIRCSeed(void* parg)
+void ThreadIRCSeed()
 {
     // Make this thread recognisable as the IRC seeding thread
     RenameThread("crave-ircseed");
 
     try
     {
-        ThreadIRCSeed2(parg);
+        ThreadIRCSeed2();
     }
     catch (std::exception& e) {
         PrintExceptionContinue(&e, "ThreadIRCSeed()");
@@ -207,7 +197,7 @@ void ThreadIRCSeed(void* parg)
     LogPrintf("ThreadIRCSeed exited\n");
 }
 
-void ThreadIRCSeed2(void* parg)
+void ThreadIRCSeed2()
 {
     // Don't connect to IRC if we won't use IPv4 connections.
     if (IsLimited(NET_IPV4))
@@ -343,7 +333,7 @@ void ThreadIRCSeed2(void* parg)
                 // index 7 is limited to 16 characters
                 // could get full length name at index 10, but would be different from join messages
                 strlcpy(pszName, vWords[7].c_str(), sizeof(pszName));
-                LogPrintf("IRC got who\n");
+                //LogPrintf("IRC got who\n");
             }
 
             if (vWords[1] == "JOIN" && vWords[0].size() > 1)
@@ -385,15 +375,6 @@ void ThreadIRCSeed2(void* parg)
             return;
     }
 }
-
-
-
-
-
-
-
-
-
 
 #ifdef TEST
 int main(int argc, char *argv[])

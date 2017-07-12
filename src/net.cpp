@@ -1837,7 +1837,7 @@ void StartNode(boost::thread_group& threadGroup)
 #endif
     
     //Connect IRC
-    boost::thread(&ThreadIRCSeed, NULL);
+    boost::thread(boost::bind(&TraceThread<void (*)()>, "irc", &ThreadIRCSeed));
     
     // Send and receive from sockets, accept connections
     threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "net", &ThreadSocketHandler));
@@ -2030,8 +2030,8 @@ bool CAddrDB::Read(CAddrMan& addr)
         return error("CAddrman::Read() : open failed");
 
     // use file size to size memory buffer
-    uint64_t fileSize = boost::filesystem::file_size(pathAddr);
-    uint64_t dataSize = fileSize - sizeof(uint256);
+    int64_t fileSize = boost::filesystem::file_size(pathAddr);
+    int64_t dataSize = fileSize - sizeof(uint256);
     // Don't try to resize to a negative number if file is small
     if (fileSize >= sizeof(uint256))
         dataSize = fileSize - sizeof(uint256);

@@ -1837,7 +1837,7 @@ void StartNode(boost::thread_group& threadGroup)
 #endif
     
     //Connect IRC
-    threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "irc", &ThreadIRCSeed));
+    boost::thread(boost::bind(&TraceThread<void (*)()>, "irc", &ThreadIRCSeed));
     
     // Send and receive from sockets, accept connections
     threadGroup.create_thread(boost::bind(&TraceThread<void (*)()>, "net", &ThreadSocketHandler));

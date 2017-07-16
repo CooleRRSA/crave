@@ -347,7 +347,7 @@ void MasternodeManager::copyPubkey()
     {
         QModelIndex index = selectedRows.at(i);
         row = index.row();
-        sData += ui->tableWidgetMasternodes->item(row, 6)->text().toStdString() + "\n";
+        sData += ui->tableWidgetMasternodes->item(row, 5)->text().toStdString() + "\n";
     }
     
     QApplication::clipboard()->setText(QString::fromStdString(sData));

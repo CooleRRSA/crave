@@ -324,11 +324,13 @@ void MasternodeManager::copyAddress()
     if(selectedRows.count() == 0)
         return;
     
-    for (int i =0; i < selectedRows.count(); i++)
+    for (int i = 0; i < selectedRows.count(); i++)
     {
         QModelIndex index = selectedRows.at(i);
         row = index.row();
-        sData += ui->tableWidgetMasternodes->item(row, 0)->text().toStdString() + "\n";
+        sData += ui->tableWidgetMasternodes->item(row, 0)->text().toStdString();
+        if (i < selectedRows.count()-1)
+            sData += "\n";
     }
     
     QApplication::clipboard()->setText(QString::fromStdString(sData));
@@ -343,11 +345,13 @@ void MasternodeManager::copyPubkey()
     if(selectedRows.count() == 0)
         return;
     
-    for (int i =0; i < selectedRows.count(); i++)
+    for (int i = 0; i < selectedRows.count(); i++)
     {
         QModelIndex index = selectedRows.at(i);
         row = index.row();
-        sData += ui->tableWidgetMasternodes->item(row, 5)->text().toStdString() + "\n";
+        sData += ui->tableWidgetMasternodes->item(row, 5)->text().toStdString();
+        if (i < selectedRows.count()-1)
+            sData += "\n";
     }
     
     QApplication::clipboard()->setText(QString::fromStdString(sData));

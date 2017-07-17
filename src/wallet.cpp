@@ -3602,18 +3602,18 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     }
     else if(hasPayment && txNew.vout.size() == 5 && payeerewardpercent > 0 && payeerewardpercent < 100) // 2 stake outputs, stake was split, plus a masternode payment
     {
-        txNew.vout[payments-2].nValue = masternodePayment / 100 * (100 - payeerewardpercent);
+        txNew.vout[payments-2].nValue = (masternodePayment / 100) * (100 - payeerewardpercent);
         txNew.vout[payments-1].nValue = masternodePayment - txNew.vout[payments-2].nValue;
         blockValue -= masternodePayment;
-        txNew.vout[2].nValue = (blockValue / 2 / CENT) * CENT;
-        txNew.vout[3].nValue = blockValue - txNew.vout[1].nValue;
+        txNew.vout[1].nValue = (blockValue / 2 / CENT) * CENT;
+        txNew.vout[2].nValue = blockValue - txNew.vout[1].nValue;
     }
     else if(hasPayment && txNew.vout.size() == 4 && payeerewardpercent > 0 && payeerewardpercent < 100) // only 1 stake output, was not split, plus a masternode payment
     {
-        txNew.vout[payments-2].nValue = masternodePayment / 100 * (100 - payeerewardpercent);
+        txNew.vout[payments-2].nValue = (masternodePayment / 100) * (100 - payeerewardpercent);
         txNew.vout[payments-1].nValue = masternodePayment - txNew.vout[payments-2].nValue;
         blockValue -= masternodePayment;
-        txNew.vout[2].nValue = blockValue;
+        txNew.vout[1].nValue = blockValue;
     }
     // Sign
     int nIn = 0;

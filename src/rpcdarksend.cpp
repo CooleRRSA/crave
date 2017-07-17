@@ -397,8 +397,10 @@ Value masternode(const Array& params, bool fHelp)
     		if(mne.getAlias() == alias) {
     			found = true;
     			std::string errorMessage;
+                std::string strRewardAddress = "";
+                std::string strRewardPercentage = "";
 
-                bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), errorMessage);
+                bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), strRewardAddress, strRewardPercentage, errorMessage);
   
                 statusObj.push_back(Pair("result", result ? "successful" : "failed"));
     			if(!result) {
@@ -449,8 +451,10 @@ Value masternode(const Array& params, bool fHelp)
 			total++;
 
 			std::string errorMessage;
+            std::string strRewardAddress = "";
+            std::string strRewardPercentage = "";
 
-            bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), errorMessage);
+            bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), strRewardAddress, strRewardPercentage, errorMessage);
 
 			Object statusObj;
 			statusObj.push_back(Pair("alias", mne.getAlias()));
@@ -759,7 +763,7 @@ Value masternodelist(const Array& params, bool fHelp)
     if (params.size() == 2) strFilter = params[1].get_str();
 
     if (fHelp ||
-            (strMode != "activeseconds" && strMode != "full" && strMode != "lastseen" && strMode != "protocol" 
+            (strMode != "activeseconds" && strMode != "reward" && strMode != "full" && strMode != "lastseen" && strMode != "protocol" 
                 && strMode != "pubkey" && strMode != "rank" && strMode != "status" && strMode != "addr" && strMode != "votes" && strMode != "lastpaid"))
     {
         throw runtime_error(
@@ -770,13 +774,14 @@ Value masternodelist(const Array& params, bool fHelp)
                 "2. \"filter\"    (string, optional) Filter results. Partial match by IP by default in all modes, additional matches in some modes\n"
                 "\nAvailable modes:\n"
                 "  activeseconds  - Print number of seconds masternode recognized by the network as enabled\n"
+                "  reward         - Show reward settings\n"
                 "  full           - Print info in format 'status protocol pubkey vin lastseen activeseconds' (can be additionally filtered, partial match)\n"
                 "  lastseen       - Print timestamp of when a masternode was last seen on the network\n"
                 "  protocol       - Print protocol of a masternode (can be additionally filtered, exact match)\n"
                 "  pubkey         - Print public key associated with a masternode (can be additionally filtered, partial match)\n"
                 "  rank           - Print rank of a masternode based on current block\n"
                 "  status         - Print masternode status: ENABLED / EXPIRED / VIN_SPENT / REMOVE / POS_ERROR (can be additionally filtered, partial match)\n"
-                "  addr            - Print ip address associated with a masternode (can be additionally filtered, partial match)\n"
+                "  addr           - Print ip address associated with a masternode (can be additionally filtered, partial match)\n"
                 "  votes          - Print all masternode votes for a Crave initiative (can be additionally filtered, partial match)\n"
                 "  lastpaid       - The last time a node was paid on the network\n"
                 );
@@ -797,6 +802,22 @@ Value masternodelist(const Array& params, bool fHelp)
             if (strMode == "activeseconds") {
                 if(strFilter !="" && strVin.find(strFilter) == string::npos) continue;
                 obj.push_back(Pair(strVin,       (int64_t)(mn.lastTimeSeen - mn.sigTime)));
+            } else if (strMode == "reward") {
+                CTxDestination address1;
+                ExtractDestination(mn.rewardAddress, address1);
+                CCravecoinAddress address2(address1);
+
+                if(strFilter !="" && address2.ToString().find(strFilter) == string::npos &&
+                    strVin.find(strFilter) == string::npos) continue;
+
+                std::string strOut = "";
+
+                if(mn.rewardPercentage != 0){
+                    strOut = address2.ToString().c_str();
+                    strOut += ":";
+                    strOut += boost::lexical_cast<std::string>(mn.rewardPercentage);
+                }
+                obj.push_back(Pair(strVin,       strOut.c_str()));
             } else if (strMode == "full") {
                 CScript pubkey;
                 pubkey.SetDestination(mn.pubkey.GetID());

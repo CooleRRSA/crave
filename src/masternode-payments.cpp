@@ -19,9 +19,7 @@ CMasternodePayments masternodePayments;
 map<uint256, CMasternodePaymentWinner> mapSeenMasternodeVotes;
 
 int CMasternodePayments::GetMinMasternodePaymentsProto() {
-    return IsSporkActive(SPORK_10_MASTERNODE_PAY_UPDATED_NODES)
-            ? MIN_MASTERNODE_PAYMENT_PROTO_VERSION_2
-            : MIN_MASTERNODE_PAYMENT_PROTO_VERSION_1;
+    return MIN_MASTERNODE_PAYMENT_PROTO_VERSION_1;
 }
 
 void ProcessMessageMasternodePayments(CNode* pfrom, std::string& strCommand, CDataStream& vRecv)
@@ -258,7 +256,12 @@ bool CMasternodePayments::ProcessBlock(int nBlockHeight)
         newWinner.score = 0;
         newWinner.nBlockHeight = nBlockHeight;
         newWinner.vin = pmn->vin;
-        newWinner.payee = GetScriptForDestination(pmn->pubkey.GetID());
+
+        if(pmn->rewardPercentage > 0 && (nHash % 100) <= (unsigned int)pmn->rewardPercentage) {
+            newWinner.payee = pmn->rewardAddress;
+        } else {
+            newWinner.payee = GetScriptForDestination(pmn->pubkey.GetID());
+        }
 
         payeeSource = GetScriptForDestination(pmn->pubkey.GetID());
     }
@@ -279,7 +282,12 @@ bool CMasternodePayments::ProcessBlock(int nBlockHeight)
                 newWinner.score = 0;
                 newWinner.nBlockHeight = nBlockHeight;
                 newWinner.vin = pmn->vin;
-                newWinner.payee = GetScriptForDestination(pmn->pubkey.GetID());
+
+                if(pmn->rewardPercentage > 0 && (nHash % 100) <= (unsigned int)pmn->rewardPercentage) {
+                    newWinner.payee = pmn->rewardAddress;
+                } else {
+                    newWinner.payee = GetScriptForDestination(pmn->pubkey.GetID());
+                }
 
                 payeeSource = GetScriptForDestination(pmn->pubkey.GetID());
 

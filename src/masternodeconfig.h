@@ -28,14 +28,18 @@ public:
         std::string privKey;
         std::string txHash;
         std::string outputIndex;
+        std::string rewardAddress;
+        std::string rewardPercent;
     public:
 
-        CMasternodeEntry(std::string alias, std::string ip, std::string privKey, std::string txHash, std::string outputIndex) {
+        CMasternodeEntry(std::string alias, std::string ip, std::string privKey, std::string txHash, std::string outputIndex, std::string rewardAddress, std::string rewardPercent) {
             this->alias = alias;
             this->ip = ip;
             this->privKey = privKey;
             this->txHash = txHash;
             this->outputIndex = outputIndex;
+            this->rewardAddress = rewardAddress;
+            this->rewardPercent = rewardPercent;
         }
 
         const std::string& getAlias() const {
@@ -77,6 +81,14 @@ public:
         void setIp(const std::string& ip) {
             this->ip = ip;
         }
+
+        const std::string& getRewardAddress() const {
+            return rewardAddress;
+        }
+
+        const std::string& getRewardPercentage() const {
+            return rewardPercent;
+        }
     };
 
     CMasternodeConfig() {
@@ -85,7 +97,7 @@ public:
 
     void clear();
     bool read(boost::filesystem::path path);
-    void add(std::string alias, std::string ip, std::string privKey, std::string txHash, std::string outputIndex);
+    void add(std::string alias, std::string ip, std::string privKey, std::string txHash, std::string outputIndex, std::string rewardAddress, std::string rewardPercent);
 
     std::vector<CMasternodeEntry>& getEntries() {
         return entries;

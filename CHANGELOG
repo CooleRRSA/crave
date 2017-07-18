@@ -54,3 +54,11 @@ v2.0.4.1
 *Removed "Rank" column (no more UI freezes)
 *Decreased maximum inputs in stake combine
 *New feature in advanced coin control (Lock/Unlock inputs) (Resets after wallet reload)
+
+v2.0.4.2
+--------
+*Send blocks tweak
+*New checkpoints
+*Fix "Copy PubKey" crash
+*Remove last "\n" at "Copy Address" and "Copy PubKey"
+*Reward integration stage 1

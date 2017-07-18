@@ -90,7 +90,7 @@ void MasternodeManager::on_tableWidget_2_itemSelectionChanged()
     }
 }
 
-void MasternodeManager::updateAdrenalineNode(QString alias, QString addr, QString privkey, QString txHash, QString txIndex, QString status)
+void MasternodeManager::updateAdrenalineNode(QString alias, QString addr, QString privkey, QString txHash, QString txIndex, QString rewardAddress, QString rewardPercentage, QString status)
 {
     LOCK(cs_adrenaline);
     bool bFound = false;
@@ -110,11 +110,15 @@ void MasternodeManager::updateAdrenalineNode(QString alias, QString addr, QStrin
 
     QTableWidgetItem *aliasItem = new QTableWidgetItem(alias);
     QTableWidgetItem *addrItem = new QTableWidgetItem(addr);
+    QTableWidgetItem *rewardAddressItem = new QTableWidgetItem(rewardAddress);
+    QTableWidgetItem *rewardPercentageItem = new QTableWidgetItem(rewardPercentage);
     QTableWidgetItem *statusItem = new QTableWidgetItem(status);
 
     ui->tableWidget_2->setItem(nodeRow, 0, aliasItem);
     ui->tableWidget_2->setItem(nodeRow, 1, addrItem);
-    ui->tableWidget_2->setItem(nodeRow, 2, statusItem);
+    ui->tableWidget_2->setItem(nodeRow, 2, rewardPercentageItem);
+    ui->tableWidget_2->setItem(nodeRow, 3, rewardAddressItem);
+    ui->tableWidget_2->setItem(nodeRow, 4, statusItem);
 }
 
 static QString seconds_to_DHMS(quint32 duration)
@@ -156,8 +160,8 @@ void MasternodeManager::updateNodeList()
         QTableWidgetItem* addressItem = new QTableWidgetItem(QString::fromStdString(mn.addr.ToString()));
         QTableWidgetItem* protocolItem = new QTableWidgetItem(QString::number(mn.protocolVersion));
         QTableWidgetItem* statusItem = new QTableWidgetItem(QString::number(mn.IsEnabled()));
-        QTableWidgetItem *activeSecondsItem = new QTableWidgetItem(seconds_to_DHMS((qint64)(mn.lastTimeSeen - mn.sigTime)));
-        QTableWidgetItem *lastSeenItem = new QTableWidgetItem(QString::fromStdString(DateTimeStrFormat(mn.lastTimeSeen)));
+        QTableWidgetItem* activeSecondsItem = new QTableWidgetItem(seconds_to_DHMS((qint64)(mn.lastTimeSeen - mn.sigTime)));
+        QTableWidgetItem* lastSeenItem = new QTableWidgetItem(QString::fromStdString(DateTimeStrFormat(mn.lastTimeSeen)));
 
         CScript pubkey;
         pubkey =GetScriptForDestination(mn.pubkey.GetID());
@@ -226,8 +230,10 @@ void MasternodeManager::on_startButton_clicked()
     BOOST_FOREACH(CMasternodeConfig::CMasternodeEntry mne, masternodeConfig.getEntries()) {
         if(mne.getAlias() == sAlias) {
             std::string errorMessage;
+            std::string strRewardAddress = mne.getRewardAddress();
+            std::string strRewardPercentage = mne.getRewardPercentage();
 
-            bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), errorMessage);
+            bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), strRewardAddress, strRewardPercentage, errorMessage);
 
             if(result) {
                 statusObj += "<br>Successfully started masternode." ;
@@ -262,8 +268,10 @@ void MasternodeManager::on_startAllButton_clicked()
         total++;
 
         std::string errorMessage;
+        std::string strRewardAddress = mne.getRewardAddress();
+        std::string strRewardPercentage = mne.getRewardPercentage();
 
-        bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), errorMessage);
+        bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), strRewardAddress, strRewardPercentage, errorMessage);
 
         if(result) {
             successful++;
@@ -289,21 +297,23 @@ void MasternodeManager::on_UpdateButton_clicked()
 {
     BOOST_FOREACH(CMasternodeConfig::CMasternodeEntry mne, masternodeConfig.getEntries()) {
         std::string errorMessage;
+        std::string strRewardAddress = mne.getRewardAddress();
+        std::string strRewardPercentage = mne.getRewardPercentage();
 
         std::vector<CMasternode> vMasternodes = mnodeman.GetFullMasternodeVector();
         if (errorMessage == ""){
             updateAdrenalineNode(QString::fromStdString(mne.getAlias()), QString::fromStdString(mne.getIp()), QString::fromStdString(mne.getPrivKey()), QString::fromStdString(mne.getTxHash()),
-                QString::fromStdString(mne.getOutputIndex()), QString::fromStdString("Not in the masternode list."));
+                QString::fromStdString(mne.getOutputIndex()), QString::fromStdString(strRewardAddress), QString::fromStdString(strRewardPercentage), QString::fromStdString("Not in the masternode list."));
         }
         else {
             updateAdrenalineNode(QString::fromStdString(mne.getAlias()), QString::fromStdString(mne.getIp()), QString::fromStdString(mne.getPrivKey()), QString::fromStdString(mne.getTxHash()),
-                QString::fromStdString(mne.getOutputIndex()), QString::fromStdString(errorMessage));
+                QString::fromStdString(mne.getOutputIndex()), QString::fromStdString(strRewardAddress), QString::fromStdString(strRewardPercentage), QString::fromStdString(errorMessage));
         }
 
         BOOST_FOREACH(CMasternode& mn, vMasternodes) {
             if (mn.addr.ToString().c_str() == mne.getIp()){
                 updateAdrenalineNode(QString::fromStdString(mne.getAlias()), QString::fromStdString(mne.getIp()), QString::fromStdString(mne.getPrivKey()), QString::fromStdString(mne.getTxHash()),
-                QString::fromStdString(mne.getOutputIndex()), QString::fromStdString("Masternode is Running."));
+                QString::fromStdString(mne.getOutputIndex()), QString::fromStdString(strRewardAddress), QString::fromStdString(strRewardPercentage), QString::fromStdString("Masternode is Running."));
             }
         }
     }
@@ -324,11 +334,13 @@ void MasternodeManager::copyAddress()
     if(selectedRows.count() == 0)
         return;
     
-    for (int i =0; i < selectedRows.count(); i++)
+    for (int i = 0; i < selectedRows.count(); i++)
     {
         QModelIndex index = selectedRows.at(i);
         row = index.row();
-        sData += ui->tableWidgetMasternodes->item(row, 0)->text().toStdString() + "\n";
+        sData += ui->tableWidgetMasternodes->item(row, 0)->text().toStdString();
+        if (i < selectedRows.count()-1)
+            sData += "\n";
     }
     
     QApplication::clipboard()->setText(QString::fromStdString(sData));
@@ -343,11 +355,13 @@ void MasternodeManager::copyPubkey()
     if(selectedRows.count() == 0)
         return;
     
-    for (int i =0; i < selectedRows.count(); i++)
+    for (int i = 0; i < selectedRows.count(); i++)
     {
         QModelIndex index = selectedRows.at(i);
         row = index.row();
-        sData += ui->tableWidgetMasternodes->item(row, 6)->text().toStdString() + "\n";
+        sData += ui->tableWidgetMasternodes->item(row, 5)->text().toStdString();
+        if (i < selectedRows.count()-1)
+            sData += "\n";
     }
     
     QApplication::clipboard()->setText(QString::fromStdString(sData));

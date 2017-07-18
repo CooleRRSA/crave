@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>331</width>
-    <height>387</height>
+    <height>298</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -65,23 +65,6 @@
      <item>
       <widget class="QLineEdit" name="addressLineEdit"/>
      </item>
-     <item>
-      <widget class="QToolButton" name="AddEditAddressPasteButton">
-       <property name="toolTip">
-        <string>Paste address from clipboard</string>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-       <property name="icon">
-        <iconset resource="../bitcoin.qrc">
-         <normaloff>:/icons/editpaste</normaloff>:/icons/editpaste</iconset>
-       </property>
-       <property name="shortcut">
-        <string>Alt+P</string>
-       </property>
-      </widget>
-     </item>
     </layout>
    </item>
    <item>
@@ -98,23 +81,6 @@
      </item>
      <item>
       <widget class="QLineEdit" name="privkeyLineEdit"/>
-     </item>
-     <item>
-      <widget class="QToolButton" name="AddEditPrivkeyPasteButton">
-       <property name="toolTip">
-        <string>Paste address from clipboard</string>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-       <property name="icon">
-        <iconset resource="../bitcoin.qrc">
-         <normaloff>:/icons/editpaste</normaloff>:/icons/editpaste</iconset>
-       </property>
-       <property name="shortcut">
-        <string>Alt+P</string>
-       </property>
-      </widget>
      </item>
     </layout>
    </item>
@@ -133,23 +99,6 @@
      <item>
       <widget class="QLineEdit" name="txhashLineEdit"/>
      </item>
-     <item>
-      <widget class="QToolButton" name="AddEditTxhashPasteButton">
-       <property name="toolTip">
-        <string>Paste address from clipboard</string>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-       <property name="icon">
-        <iconset resource="../bitcoin.qrc">
-         <normaloff>:/icons/editpaste</normaloff>:/icons/editpaste</iconset>
-       </property>
-       <property name="shortcut">
-        <string>Alt+P</string>
-       </property>
-      </widget>
-     </item>
     </layout>
    </item>
    <item>
@@ -166,6 +115,40 @@
      </item>
      <item>
       <widget class="QLineEdit" name="outputindexLineEdit"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_6">
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Reward Address</string>
+       </property>
+      </widget>
+     </item> 
+     <item>
+      <widget class="QLineEdit" name="rewardaddressLineEdit"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_7">
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QLabel" name="label_7">
+       <property name="text">
+        <string>Reward %</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="rewardpercentageLineEdit"/>
      </item>
     </layout>
    </item>
@@ -192,8 +175,6 @@
    </item>
   </layout>
  </widget>
- <resources>
-  <include location="../bitcoin.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

@@ -77,16 +77,19 @@ public:
     bool allowFreeTx;
     int protocolVersion;
     int64_t nLastDsq; //the dsq count from the last dsq broadcast of this node
+    CScript rewardAddress;
+    int rewardPercentage;
     int nVote;
     int64_t lastVote;
     int nScanningErrorCount;
     int nLastScanningErrorBlockHeight;
     int64_t nLastPaid;
     bool isPortOpen;
+    bool isOldNode;
 
     CMasternode();
     CMasternode(const CMasternode& other);
-    CMasternode(CService newAddr, CTxIn newVin, CPubKey newPubkey, std::vector<unsigned char> newSig, int64_t newSigTime, CPubKey newPubkey2, int protocolVersionIn);
+    CMasternode(CService newAddr, CTxIn newVin, CPubKey newPubkey, std::vector<unsigned char> newSig, int64_t newSigTime, CPubKey newPubkey2, int protocolVersionIn, CScript rewardAddress, int rewardPercentage);
 
 
     void swap(CMasternode& first, CMasternode& second) // nothrow
@@ -111,12 +114,15 @@ public:
         swap(first.allowFreeTx, second.allowFreeTx);
         swap(first.protocolVersion, second.protocolVersion);
         swap(first.nLastDsq, second.nLastDsq);
+        swap(first.rewardAddress, second.rewardAddress);
+        swap(first.rewardPercentage, second.rewardPercentage);
         swap(first.nVote, second.nVote);
         swap(first.lastVote, second.lastVote);
         swap(first.nScanningErrorCount, second.nScanningErrorCount);
         swap(first.nLastScanningErrorBlockHeight, second.nLastScanningErrorBlockHeight);
         swap(first.nLastPaid, second.nLastPaid);
         swap(first.isPortOpen, second.isPortOpen);
+        swap(first.isOldNode, second.isOldNode);
     }
 
     CMasternode& operator=(CMasternode from)
@@ -159,12 +165,15 @@ public:
                 READWRITE(allowFreeTx);
                 READWRITE(protocolVersion);
                 READWRITE(nLastDsq);
+                READWRITE(rewardAddress);
+                READWRITE(rewardPercentage);
                 READWRITE(nVote);
                 READWRITE(lastVote);
                 READWRITE(nScanningErrorCount);
                 READWRITE(nLastScanningErrorBlockHeight);
                 READWRITE(nLastPaid);
                 READWRITE(isPortOpen);
+                READWRITE(isOldNode);
         }
     )
 
@@ -185,6 +194,11 @@ public:
     void ChangePortStatus(bool status)
     {
         isPortOpen = status;
+    }
+
+    void ChangeNodeStatus(bool status)
+    {
+        isOldNode = status;
     }
     
     inline uint64_t SliceHash(uint256& hash, int slice)

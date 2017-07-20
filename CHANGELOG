@@ -62,3 +62,7 @@ v2.0.4.2
 *Fix "Copy PubKey" crash
 *Remove last "\n" at "Copy Address" and "Copy PubKey"
 *Reward integration stage 1
+
+v2.0.4.3
+--------
+*Old masternode system compatibility fix

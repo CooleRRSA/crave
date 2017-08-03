@@ -64,12 +64,17 @@ HEADERS = $(wildcard *.h)
 
 OBJS= \
     obj/alert.o \
+    obj/allocators.o \
     obj/version.o \
+    obj/support/cleanse.o \
     obj/checkpoints.o \
     obj/netbase.o \
     obj/addrman.o \
+    obj/base58.o \
     obj/crypter.o \
     obj/key.o \
+    obj/pubkey.o \
+    obj/ecwrapper.o \
     obj/init.o \
     obj/bitcoind.o \
     obj/keystore.o \
@@ -84,7 +89,9 @@ OBJS= \
     obj/rpcnet.o \
     obj/rpcblockchain.o \
     obj/rpcrawtransaction.o \
+    obj/rpcsmessage.o \
     obj/script.o \
+    obj/scrypt.o \
     obj/sync.o \
     obj/txmempool.o \
     obj/util.o \
@@ -92,9 +99,25 @@ OBJS= \
     obj/noui.o \
     obj/kernel.o \
     obj/pbkdf2.o \
-    obj/scrypt.o \
-    obj/chainparams.o
-
+    obj/chainparams.o \
+    obj/stealth.o \
+    obj/activemasternode.o \
+    obj/darksend.o \
+    obj/darksend-relay.o \
+    obj/instantx.o \
+    obj/masternodeconfig.o \
+    obj/masternodeman.o \
+    obj/masternode.o \
+    obj/masternode-payments.o \
+    obj/rpcdarksend.o \
+    obj/spork.o \
+    obj/crypto/hmac_sha256.o \
+    obj/crypto/hmac_sha512.o \
+    obj/crypto/ripemd160.o \
+    obj/crypto/sha1.o \
+    obj/crypto/sha256.o \
+    obj/crypto/sha512.o \
+    obj/smessage.o
 ifeq (${USE_WALLET}, 1)
     DEFS += -DENABLE_WALLET
     OBJS += \

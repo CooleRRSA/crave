@@ -219,8 +219,6 @@ void MasternodeManager::on_startButton_clicked()
     int r = index.row();
     std::string sAlias = ui->tableWidget_2->item(r, 0)->text().toStdString();
 
-
-
     if(pwalletMain->IsLocked()) {
     }
 

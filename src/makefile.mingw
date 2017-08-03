@@ -112,7 +112,6 @@ OBJS= \
     obj/crypto/sha1.o \
     obj/crypto/sha256.o \
     obj/crypto/sha512.o \
-    obj/irc.o \
     obj/smessage.o
 
 ifeq (${USE_WALLET}, 1)

@@ -1,6 +1,6 @@
 TEMPLATE = app
 TARGET = crave-qt
-VERSION = 2.1.0.0
+VERSION = 2.1.0.1
 INCLUDEPATH += src src/json src/qt src/qt/plugins/mrichtexteditor
 QT += network printsupport
 DEFINES += ENABLE_WALLET
@@ -226,7 +226,6 @@ HEADERS += src/qt/bitcoingui.h \
     src/main.h \
     src/miner.h \
     src/net.h \
-    src/irc.h \
     src/ecwrapper.h \
     src/key.h \
     src/pubkey.h \
@@ -352,7 +351,6 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/miner.cpp \
     src/init.cpp \
     src/net.cpp \
-    src/irc.cpp \
     src/checkpoints.cpp \
     src/addrman.cpp \
     src/db.cpp \

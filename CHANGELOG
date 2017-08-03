@@ -72,3 +72,7 @@ v2.1.0.0
 *Reward system is enabled
 Now you can move your masternore reward to another address.
 Use it carefully.
+
+v2.1.0.1
+--------
+*Removed IRC seeding to prevent fake antivirus warnings.

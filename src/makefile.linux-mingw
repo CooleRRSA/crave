@@ -93,7 +93,6 @@ OBJS= \
     obj/kernel.o \
     obj/pbkdf2.o \
     obj/scrypt.o \
-    obj/irc.o \
     obj/chainparams.o
 
 ifeq (${USE_WALLET}, 1)

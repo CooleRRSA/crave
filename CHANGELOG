@@ -76,3 +76,7 @@ Use it carefully.
 v2.1.0.1
 --------
 *Removed IRC seeding to prevent fake antivirus warnings.
+
+v2.1.0.2
+--------
+*Network sync fix

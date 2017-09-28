@@ -128,6 +128,10 @@ bool CActiveMasternode::StopMasterNode(std::string strService, std::string strKe
 		return false;
 	}
 
+    if (GetMasterNodeVin(vin, pubKeyMasternode, keyMasternode)){
+        LogPrintf("MasternodeStop::VinFound: %s\n", vin.ToString());
+    }
+
 	return StopMasterNode(vin, CService(strService, true), keyMasternode, pubKeyMasternode, errorMessage);
 }
 

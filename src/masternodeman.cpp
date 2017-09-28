@@ -1207,6 +1207,8 @@ void CMasternodeMan::Remove(CTxIn vin)
             LogPrint("masternode", "CMasternodeMan: Removing Masternode %s - %i now\n", (*it).addr.ToString().c_str(), size() - 1);
             vMasternodes.erase(it);
             break;
+        } else {
+            ++it;
         }
     }
 }

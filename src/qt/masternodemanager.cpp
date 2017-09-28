@@ -228,10 +228,7 @@ void MasternodeManager::on_startButton_clicked()
     BOOST_FOREACH(CMasternodeConfig::CMasternodeEntry mne, masternodeConfig.getEntries()) {
         if(mne.getAlias() == sAlias) {
             std::string errorMessage;
-            std::string strRewardAddress = mne.getRewardAddress();
-            std::string strRewardPercentage = mne.getRewardPercentage();
-
-            bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), strRewardAddress, strRewardPercentage, errorMessage);
+            bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), mne.getRewardAddress(), mne.getRewardPercentage(), errorMessage);
 
             if(result) {
                 statusObj += "<br>Successfully started masternode." ;

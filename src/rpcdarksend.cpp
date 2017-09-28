@@ -397,10 +397,7 @@ Value masternode(const Array& params, bool fHelp)
     		if(mne.getAlias() == alias) {
     			found = true;
     			std::string errorMessage;
-                std::string strRewardAddress = "";
-                std::string strRewardPercentage = "";
-
-                bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), strRewardAddress, strRewardPercentage, errorMessage);
+                bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), mne.getRewardAddress(), mne.getRewardPercentage(), errorMessage);
   
                 statusObj.push_back(Pair("result", result ? "successful" : "failed"));
     			if(!result) {
@@ -451,10 +448,7 @@ Value masternode(const Array& params, bool fHelp)
 			total++;
 
 			std::string errorMessage;
-            std::string strRewardAddress = "";
-            std::string strRewardPercentage = "";
-
-            bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), strRewardAddress, strRewardPercentage, errorMessage);
+            bool result = activeMasternode.Register(mne.getIp(), mne.getPrivKey(), mne.getTxHash(), mne.getOutputIndex(), mne.getRewardAddress(), mne.getRewardPercentage(), errorMessage);
 
 			Object statusObj;
 			statusObj.push_back(Pair("alias", mne.getAlias()));
